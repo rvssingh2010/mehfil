@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#faf9f6"><meta name="color-scheme" content="light">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<title>Mehfil seeds</title>
+<style>
+:root{color-scheme:light;--bg:#faf9f6;--card:#fff;--ink:#1f1d1a;--mute:#6f6a62;--line:#e4dfd6;--acc:#c4623a}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:17px/1.5 -apple-system,'Segoe UI',Roboto,'Noto Sans','Noto Sans Devanagari',sans-serif;-webkit-text-size-adjust:100%}
+#app{max-width:640px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:2}
+header h1{font-size:19px;margin:0;flex:1}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 14px}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}button.ghost{border-color:transparent;background:none;color:var(--mute)}
+.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;font-size:30px;line-height:1;padding:0;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.st{padding:8px 16px;font-size:13px;color:var(--mute);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.st.ok{color:#2e6b3c}.st.warn{color:#9a4a1a}
+.list{padding:8px 16px 100px;display:flex;flex-direction:column;gap:10px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.item .t{white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.item small{color:var(--mute);display:block;margin-top:6px;font-size:12px}
+.empty{color:var(--mute);padding:40px 16px;text-align:center}
+textarea{flex:1;width:100%;border:0;outline:0;resize:none;background:transparent;font:19px/1.6 inherit;font-family:inherit;padding:16px;color:var(--ink);min-height:60vh}
+.bar{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--bg)}
+.bar .sp{flex:1}
+</style></head><body>
+<div id="app"></div>
+<script src="../config.js"></script>
+<script>
+(()=>{
+const KEY='mehfil-phone-v1';
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+S=S||{};S.seeds=S.seeds||[];S.tomb=S.tomb||{};S.base=S.base||{};S.files=S.files||{};S.folder=S.folder||null;S.seedsDir=S.seedsDir||null;S.last=S.last||0;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const ui={open:null,msg:'',kind:''};
+const $=s=>document.querySelector(s);
+const sd=id=>S.seeds.find(x=>x.id===id);
+const sigOf=x=>JSON.stringify([x.title||'',x.text||'',x.why||'',x.later||'',x.dig||{}]);
+const pending=()=>S.seeds.filter(x=>S.base[x.id]!==x.updated).length+Object.keys(S.tomb).filter(id=>S.base[id]!==S.tomb[id]).length;
+
+/* ---------- screens ---------- */
+function render(){
+  const app=$('#app');
+  if(ui.open){const x=sd(ui.open);if(!x){ui.open=null;return render()}
+    app.innerHTML=`<header><button class="ghost" data-a="back">‹ Seeds</button><h1></h1><button class="ghost" data-a="del">Delete</button></header>
+      <textarea id="ta" placeholder="Write the seed…" autocomplete="off" spellcheck="true">${esc(x.text)}</textarea>
+      <div class="bar"><span class="sp"></span><button class="pri" data-a="back">Done</button></div>`;
+    const ta=$('#ta');ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);return}
+  const list=[...S.seeds].sort((a,b)=>(b.updated||0)-(a.updated||0));
+  const p=pending();
+  app.innerHTML=`<header><h1>Seeds</h1><button data-a="sync">${tokenValid()?'Sync':'Sync…'}</button></header>
+    <div class="st ${ui.kind}" id="st">${statusText(p)}</div>
+    <div class="list">${list.map(x=>`<div class="item" data-a="open" data-id="${x.id}"><div class="t">${esc((x.text||'').trim()||'(empty)')}</div><small>${new Date(x.updated).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${S.base[x.id]===x.updated?'':' · not synced yet'}</small></div>`).join('')||'<div class="empty">No seeds yet.<br>Tap ＋ to write one.</div>'}</div>
+    <button class="pri fab" data-a="new" aria-label="New seed">＋</button>`;
+}
+function statusText(p){
+  if(ui.msg)return esc(ui.msg);
+  if(!navigator.onLine)return p?`Offline · ${p} waiting to sync`:'Offline · everything is saved on this phone';
+  if(!(window.MEHFIL&&window.MEHFIL.CLIENT_ID&&!window.MEHFIL.CLIENT_ID.startsWith('PASTE')))return 'Saved on this phone. Google sign-in is not set up yet.';
+  if(p)return `${p} waiting to sync. Tap Sync.`;
+  return S.last?'✓ Synced at '+new Date(S.last).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Tap Sync to connect your Drive.';
+}
+function setMsg(m,k){ui.msg=m;ui.kind=k||'';const el=$('#st');if(el){el.className='st '+ui.kind;el.innerHTML=esc(m)}}
+
+/* ---------- editing ---------- */
+let autoT=null;
+document.addEventListener('input',e=>{if(e.target.id!=='ta')return;const x=sd(ui.open);if(!x)return;x.text=e.target.value;x.updated=Date.now();save();ui.msg='';
+  clearTimeout(autoT);autoT=setTimeout(()=>{if(tokenValid())sync(true)},4000)});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a;
+  if(a==='new'){const x={id:uid(),title:'',text:'',why:'',later:'',dig:{},updated:Date.now()};S.seeds.unshift(x);save();ui.open=x.id;render()}
+  else if(a==='open'){ui.open=t.dataset.id;render()}
+  else if(a==='back'){const x=sd(ui.open);if(x&&!(x.text||'').trim()&&!S.base[x.id]){S.seeds=S.seeds.filter(y=>y!==x)}ui.open=null;save();render();if(tokenValid())sync(true)}
+  else if(a==='del'){const x=sd(ui.open);if(x&&confirm('Delete this seed?')){S.seeds=S.seeds.filter(y=>y!==x);if(S.base[x.id]!==undefined||S.files[x.id])S.tomb[x.id]=Date.now();ui.open=null;save();render();if(tokenValid())sync(true)}}
+  else if(a==='sync')sync(false)});
+
+/* ---------- Google sign-in + Drive ---------- */
+const API='https://www.googleapis.com/drive/v3',UP='https://www.googleapis.com/upload/drive/v3/files';
+let tok=null,tokExp=0,gis=null,busy=false;
+const tokenValid=()=>!!tok&&Date.now()<tokExp-60000;
+function loadGIS(){if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();
+  return gis||(gis=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=res;s.onerror=()=>{gis=null;rej(new Error('Could not reach Google. Are you online?'))};document.head.appendChild(s)}))}
+function getToken(interactive){return new Promise((res,rej)=>{
+  if(tokenValid())return res(tok);
+  const cid=(window.MEHFIL||{}).CLIENT_ID;
+  if(!cid||cid.startsWith('PASTE'))return rej(new Error('Google sign-in is not set up yet (config.js has no client ID).'));
+  loadGIS().then(()=>{
+    const c=google.accounts.oauth2.initTokenClient({client_id:cid,scope:'https://www.googleapis.com/auth/drive',
+      callback:r=>{if(r&&r.access_token){tok=r.access_token;tokExp=Date.now()+(r.expires_in||3600)*1000;res(tok)}else rej(new Error((r&&r.error)||'Sign-in failed'))},
+      error_callback:er=>rej(new Error('Sign-in was not completed'+(er&&er.type?' ('+er.type+')':'')))});
+    c.requestAccessToken({prompt:interactive?'':'none'})}).catch(rej)})}
+async function g(url,opt){opt=opt||{};const r=await fetch(url,Object.assign({},opt,{headers:Object.assign({Authorization:'Bearer '+tok},opt.headers||{})}));
+  if(r.status===401){tok=null;throw new Error('Signed out. Tap Sync to sign in again.')}
+  if(!r.ok)throw new Error('Drive said '+r.status);return r}
+async function listAll(q,fields){let out=[],pt='';do{const r=await g(`${API}/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(${fields})&pageSize=1000${pt?'&pageToken='+pt:''}`);const j=await r.json();out=out.concat(j.files||[]);pt=j.nextPageToken||''}while(pt);return out}
+async function ensureFolders(){if(S.folder&&S.seedsDir)return;
+  const fs=await listAll("name='Mehfil' and mimeType='application/vnd.google-apps.folder' and trashed=false",'id,name');
+  if(!fs.length)throw new Error('No folder called Mehfil found in this Google account’s Drive.');
+  let chosen=null,sub=null;
+  for(const f of fs){const s=await listAll(`'${f.id}' in parents and name='seeds' and mimeType='application/vnd.google-apps.folder' and trashed=false`,'id');if(s.length){chosen=f;sub=s[0].id;break}}
+  if(!chosen){chosen=fs[0];const r=await g(`${API}/files?fields=id`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'seeds',mimeType:'application/vnd.google-apps.folder',parents:[chosen.id]})});sub=(await r.json()).id}
+  S.folder=chosen.id;S.seedsDir=sub;save()}
+async function upload(name,obj,fid){const body=JSON.stringify(obj);
+  if(fid){const r=await g(`${UP}/${fid}?uploadType=media&fields=id,modifiedTime`,{method:'PATCH',headers:{'Content-Type':'application/json'},body});return r.json()}
+  const b='mehfil'+Date.now();const mp=`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name,parents:[S.seedsDir]})}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--`;
+  const r=await g(`${UP}?uploadType=multipart&fields=id,modifiedTime`,{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body:mp});return r.json()}
+function merge(f){const fu=f.updated||0,loc=sd(f.id);let ch=false;
+  if(f.deleted){S.tomb[f.id]=Math.max(S.tomb[f.id]||0,fu);S.base[f.id]=fu;if(loc&&(loc.updated||0)<=fu){S.seeds=S.seeds.filter(x=>x!==loc);if(ui.open===f.id)ui.open=null;ch=true}return ch}
+  const inc={title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{}};
+  if(!loc){if(S.tomb[f.id]&&S.tomb[f.id]>=fu)return false;S.seeds.unshift(Object.assign({id:f.id,updated:fu},inc));S.base[f.id]=fu;return true}
+  if(fu>(loc.updated||0)){
+    if(sigOf(loc)!==sigOf(inc)&&(loc.updated||0)>(S.base[f.id]||0)){S.seeds.unshift({id:uid(),title:'',text:(loc.text||'')+'\n\n(copy kept: edited on two devices)',why:'',later:'',dig:{},updated:Date.now()})}
+    Object.assign(loc,inc,{updated:fu});S.base[f.id]=fu;return true}
+  if(fu===(loc.updated||0))S.base[f.id]=fu;return false}
+async function sync(quiet){if(busy)return;busy=true;
+  try{if(!navigator.onLine)throw new Error('Offline. Seeds are saved here and will sync later.');
+    if(!quiet)setMsg('Syncing…');
+    await getToken(!quiet);await ensureFolders();
+    const files=await listAll(`'${S.seedsDir}' in parents and trashed=false`,'id,name,modifiedTime');
+    const newest={};for(const f of files){if(!/\.json$/.test(f.name))continue;const id=f.name.replace(/\.json$/,'');if(!newest[id]||f.modifiedTime>newest[id].modifiedTime)newest[id]=f}
+    let changed=0;
+    for(const [id,f] of Object.entries(newest)){const k=S.files[id];
+      if(k&&k.fid===f.id&&k.mt===f.modifiedTime)continue;
+      const j=await (await g(`${API}/files/${f.id}?alt=media`)).json();if(!j||!j.id)continue;
+      if(merge(j))changed++;S.files[id]={fid:f.id,mt:f.modifiedTime}}
+    for(const x of S.seeds){if(S.base[x.id]!==x.updated){const r=await upload(x.id+'.json',{id:x.id,title:x.title||'',text:x.text,why:x.why||'',later:x.later||'',dig:x.dig||{},updated:x.updated},(S.files[x.id]||{}).fid);S.files[x.id]={fid:r.id,mt:r.modifiedTime};S.base[x.id]=x.updated}}
+    for(const [id,t] of Object.entries(S.tomb)){if(S.base[id]!==t){const r=await upload(id+'.json',{id,deleted:true,updated:t},(S.files[id]||{}).fid);S.files[id]={fid:r.id,mt:r.modifiedTime};S.base[id]=t}}
+    S.last=Date.now();save();ui.msg='';ui.kind='ok';
+    if(ui.open&&changed&&document.activeElement&&document.activeElement.id==='ta'){/* leave the box alone while typing */}else render();
+    setMsg('✓ Synced at '+new Date(S.last).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+(changed?' · '+changed+' updated from Drive':''),'ok')
+  }catch(e){ui.msg=quiet?'':e.message;ui.kind=quiet?'':'warn';if(!quiet)setMsg(e.message,'warn');else{const el=$('#st');if(el&&!ui.open)render()}}
+  busy=false}
+window.addEventListener('online',()=>{if(tokenValid())sync(true);else render()});
+window.addEventListener('offline',render);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){render();if(tokenValid())sync(true)}});
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('../sw.js').catch(()=>{});
+window.__phone={get S(){return S},sync:()=>sync(false),render,ui};
+render();
+})();
+</script></body></html>
