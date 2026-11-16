@@ -80,6 +80,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t
 /* ---------- Google sign-in + Drive ---------- */
 const API='https://www.googleapis.com/drive/v3',UP='https://www.googleapis.com/upload/drive/v3/files';
 let tok=null,tokExp=0,gis=null,busy=false;
+try{const t=JSON.parse(localStorage.getItem(KEY+'-tok'));if(t&&t.exp>Date.now()+60000){tok=t.tok;tokExp=t.exp}}catch(e){}
 const tokenValid=()=>!!tok&&Date.now()<tokExp-60000;
 function loadGIS(){if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();
   return gis||(gis=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=res;s.onerror=()=>{gis=null;rej(new Error('Could not reach Google. Are you online?'))};document.head.appendChild(s)}))}
@@ -88,12 +89,14 @@ function getToken(interactive){return new Promise((res,rej)=>{
   const cid=(window.MEHFIL||{}).CLIENT_ID;
   if(!cid||cid.startsWith('PASTE'))return rej(new Error('Google sign-in is not set up yet (config.js has no client ID).'));
   loadGIS().then(()=>{
-    const c=google.accounts.oauth2.initTokenClient({client_id:cid,scope:'https://www.googleapis.com/auth/drive',
-      callback:r=>{if(r&&r.access_token){tok=r.access_token;tokExp=Date.now()+(r.expires_in||3600)*1000;res(tok)}else rej(new Error((r&&r.error)||'Sign-in failed'))},
-      error_callback:er=>rej(new Error('Sign-in was not completed'+(er&&er.type?' ('+er.type+')':'')))});
-    c.requestAccessToken({prompt:interactive?'':'none'})}).catch(rej)})}
+    const ask=prompt=>new Promise((ok,no)=>{
+      const c=google.accounts.oauth2.initTokenClient({client_id:cid,scope:'https://www.googleapis.com/auth/drive',
+        callback:r=>{if(r&&r.access_token){tok=r.access_token;tokExp=Date.now()+(r.expires_in||3600)*1000;try{localStorage.setItem(KEY+'-tok',JSON.stringify({tok,exp:tokExp}))}catch(e){}ok(tok)}else no(new Error((r&&r.error)||'Sign-in failed'))},
+        error_callback:er=>no(new Error('Sign-in was not completed'+(er&&er.type?' ('+er.type+')':'')))});
+      c.requestAccessToken({prompt})});
+    ask('none').then(res,()=>interactive?ask('').then(res,rej):rej(new Error('Tap Sync to sign in')))}).catch(rej)})}
 async function g(url,opt){opt=opt||{};const r=await fetch(url,Object.assign({},opt,{headers:Object.assign({Authorization:'Bearer '+tok},opt.headers||{})}));
-  if(r.status===401){tok=null;throw new Error('Signed out. Tap Sync to sign in again.')}
+  if(r.status===401){tok=null;try{localStorage.removeItem(KEY+'-tok')}catch(e){}throw new Error('Signed out. Tap Sync to sign in again.')}
   if(!r.ok)throw new Error('Drive said '+r.status);return r}
 async function listAll(q,fields){let out=[],pt='';do{const r=await g(`${API}/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(${fields})&pageSize=1000${pt?'&pageToken='+pt:''}`);const j=await r.json();out=out.concat(j.files||[]);pt=j.nextPageToken||''}while(pt);return out}
 async function ensureFolders(){if(S.folder&&S.seedsDir)return;
