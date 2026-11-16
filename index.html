@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><meta name="theme-color" content="#faf9f6">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prepare — prototype</title>
+<style>
+:root{color-scheme:light;--bg:#fbfaf8;--side:#f1efeb;--panel:#fff;--ink:#26241f;--mute:#8a857b;--line:#e2ded6;--acc:#b4532a;--accbg:#f6e6dc;--sel:#e6e1d7;--ff:Georgia,'Iowan Old Style','Kohinoor Devanagari','Devanagari Sangam MN','Noto Serif Devanagari',Mangal,serif;--ok:#2f7d4f;--okbg:#e3f1e8;--tell:#2c6aa8;--tellbg:#e3edf8;--ass:#a0701a;--assbg:#f8efd9}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:14px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer}
+button:hover{background:var(--sel)}button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+button.sm{font-size:12px;padding:2px 8px}button.ghost{border-color:transparent;background:none;color:var(--mute)}
+input,select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+textarea{width:100%;resize:vertical;min-height:58px;line-height:1.5}
+#app{display:grid;grid-template-columns:290px 1fr;height:100vh}
+#side{background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#side .top{padding:12px 10px;display:flex;flex-direction:column;gap:8px}
+.brand{font-weight:700;font-size:15px}.brand small{font-weight:400;color:var(--mute);margin-left:6px}
+.tabs{display:flex;gap:4px}.tabs button{flex:1;padding:4px 2px;font-size:12.5px}.tabs button.on{background:var(--accbg);border-color:var(--acc);color:var(--acc)}
+#list{flex:1;overflow:auto;padding:0 6px 10px}
+#list h6{margin:12px 8px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--mute)}
+.item{padding:6px 8px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+.item:hover{background:var(--sel)}.item.sel{background:var(--accbg);color:var(--acc)}
+.item small{color:var(--mute);white-space:nowrap}
+#foot{padding:8px 10px;border-top:1px solid var(--line);display:flex;gap:6px;flex-wrap:wrap}
+#foot .syn{width:100%;font-size:12px;color:var(--mute);line-height:1.4}#foot .syn.ok{color:#2e6b3c}#foot .syn.warn{color:#9a4a1a}
+#main{overflow:auto;padding:22px 28px 60px}
+.wrap{max-width:1100px;margin:0 auto}
+.two{display:grid;grid-template-columns:1.25fr 1fr;gap:26px;align-items:start}
+@media(max-width:1000px){.two{grid-template-columns:1fr}}
+.head{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.head input.title{flex:1;font:700 22px Georgia,serif;border:none;border-bottom:2px solid var(--line);border-radius:0;background:transparent;padding:4px 0}
+.badge{background:var(--accbg);color:var(--acc);border-radius:10px;padding:2px 9px;font-size:12px;white-space:nowrap}
+.sec{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:16px}
+.sec h3{margin:0 0 4px;font-size:15px}.sec>p.sub{margin:0 0 10px;color:var(--mute);font-size:12.5px}
+.grp{margin:14px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--mute);border-bottom:1px solid var(--line);padding-bottom:3px}
+.q{margin:10px 0}.q label{display:block;font-weight:600;margin-bottom:4px;font-size:13.5px}
+.q.done>label::after{content:" ✓";color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{display:inline-flex;gap:5px;align-items:center;background:var(--sel);border-radius:14px;padding:3px 10px;cursor:pointer;font-size:12.5px}
+.chip:hover{outline:1px solid var(--acc)}.chip b{font-weight:600}.chip i{font-style:normal;color:var(--mute);font-size:11px}
+.ans{border-left:3px solid var(--line);padding:4px 0 4px 10px;margin:8px 0}
+.ans p{margin:0 0 4px;white-space:pre-wrap;line-height:1.5}
+.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--mute)}
+a.from{color:var(--acc);cursor:pointer;border-bottom:1px dotted var(--acc)}
+.ev{border-radius:10px;padding:1px 8px;font-size:11px;border:none;appearance:none;cursor:pointer}
+.ev.observed{background:var(--okbg);color:var(--ok)}.ev.told{background:var(--tellbg);color:var(--tell)}.ev.assumed{background:var(--assbg);color:var(--ass)}
+.addbox{margin-top:6px;padding:8px;background:var(--bg);border:1px dashed var(--line);border-radius:8px}
+.addbox .row{display:flex;gap:6px;margin-top:6px;align-items:center}
+.from-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--accbg);border:1px solid var(--acc);border-radius:10px;padding:8px 12px;margin-bottom:16px}
+.from-bar.none{background:var(--assbg);border-color:var(--ass)}
+.answ{margin:6px 0}.answ textarea{min-height:46px}.answ.new textarea{border-style:dashed;min-height:46px}
+.answ .meta{margin-top:3px}
+.ev.none{background:transparent;color:var(--mute);border:1px dashed var(--line)}
+.cardsHead{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px}.cardsHead h3{margin:0;font-size:15px}
+.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.icard{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;min-height:150px;box-shadow:0 1px 4px rgba(0,0,0,.08);cursor:pointer;display:flex;flex-direction:column;gap:4px;border-top:3px solid var(--acc)}
+.icard:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.14)}
+.icard .ih{display:flex;gap:6px;align-items:center;font-size:15px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.icard .it{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute)}
+.icard .iq{font:italic 13px/1.4 Georgia,serif;color:var(--acc)}
+.icard ul{margin:2px 0;padding-left:16px;font-size:12.5px;color:var(--ink);flex:1}
+.icard .if{font-size:11.5px;color:var(--mute);margin-top:auto}
+.icard.lib{opacity:.7;border-top-color:var(--line);background:var(--bg)}.icard.lib:hover{opacity:1}
+.icard.newc{border:2px dashed var(--line);border-top:2px dashed var(--line);align-items:center;justify-content:center;text-align:center;box-shadow:none;color:var(--mute);background:transparent}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;margin-bottom:6px}
+.qcard{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--line);border-radius:6px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin:0!important;display:flex;flex-direction:column;gap:2px}
+.qcard.done{border-top-color:var(--ok)}
+.qcard>label{font-size:13.5px;line-height:1.35;margin-bottom:6px}
+.qcard .answ textarea{min-height:64px}
+.grp{margin:22px 0 10px}
+.two2{display:grid;grid-template-columns:1.5fr 1fr;gap:22px;align-items:start}@media(max-width:1000px){.two2{grid-template-columns:1fr}}
+.ptext{min-height:52vh;font:17px/1.7 Georgia,'Iowan Old Style',serif!important;padding:16px 18px;border-radius:8px}
+.ptext[readonly]{background:var(--bg)}
+.phasebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:-2px 0 14px}.phasebar i{color:var(--mute);font-style:normal}.phasebar .sp{flex:1}
+.step{padding:3px 11px;border-radius:14px;background:var(--sel);color:var(--mute);font-size:12.5px}.step.past{color:var(--ink)}.step.cur{background:var(--acc);color:#fff;font-weight:600}
+.lockline{font-size:13px;color:var(--mute)}.lockline b{color:var(--ink)}
+.banner{background:var(--assbg);border:1px solid var(--ass);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px}.banner.note{background:var(--accbg);border-color:var(--acc)}
+.counter{display:flex;justify-content:space-between;margin-top:8px;font-size:12.5px;color:var(--mute)}
+.stuck{margin:6px 0;padding-left:18px;font-size:13px}
+.matscroll{max-height:46vh;overflow:auto;margin-top:10px;border-top:1px solid var(--line);padding-right:6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column}.stat b{font:700 26px Georgia,serif}.stat span{color:var(--mute);font-size:12.5px}
+.pickbox h2{margin:2px 0 4px;font-family:Georgia,serif}.pickbox h2 small{font:400 13px -apple-system,sans-serif;color:var(--mute)}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--mute)}
+.bars{display:flex;gap:6px;align-items:flex-end;height:120px}.bar{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}.bf{width:100%;background:var(--line);border-radius:4px 4px 0 0;min-height:2px}.bf.today{background:var(--acc)}.bar small{color:var(--mute);font-size:10.5px}
+.pbar{height:8px;background:var(--sel);border-radius:4px;overflow:hidden}.pbar div{height:100%;background:var(--ok)}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute);padding:6px 12px 6px 0;border-bottom:1px solid var(--line)}
+td{padding:8px 12px 8px 0;border-bottom:1px solid var(--line);vertical-align:top;font-size:13.5px}
+tr[data-act]:hover td{background:var(--sel)}
+.big{font:700 24px Georgia,serif;margin:2px 0 6px}.big small{font:400 12.5px -apple-system,sans-serif;color:var(--mute)}
+.stat small{color:var(--mute);font-size:11.5px;margin-top:2px}
+.bstack{width:100%;display:flex;flex-direction:column;min-height:2px;border-radius:4px 4px 0 0;overflow:hidden}
+.bf2.piece{background:var(--acc)}.bf2.piece.today{background:var(--acc)}.bf2.prep{background:#6b8fb8}
+.legend{font-size:12px;color:var(--mute)}.lg{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 3px 0 10px}.lg.piece{background:var(--acc)}.lg.prep{background:#6b8fb8}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100}
+.mbox{background:var(--panel);border-radius:12px;padding:20px 22px;min-width:340px;max-width:480px;box-shadow:0 12px 40px rgba(0,0,0,.3)}.mbox h3{margin:0 0 6px}.mbox p{margin:6px 0;color:var(--mute);line-height:1.45}.mbox input{width:100%;margin-top:8px}
+.tb{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:6px;background:var(--bg);border:1px solid var(--line);border-bottom:none;border-radius:8px 8px 0 0;position:sticky;top:0;z-index:5}
+.tbb{min-width:28px;height:28px;padding:0 7px;border:1px solid transparent;background:transparent;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;color:var(--ink)}
+.tbb:hover{background:var(--sel)}.tbb.on{background:var(--accbg);color:var(--acc);border-color:var(--acc)}.tbb:disabled{opacity:.4;cursor:default}
+.tb select{height:28px;padding:0 6px;font-size:12.5px}.tsep{width:1px;height:20px;background:var(--line);margin:0 3px}
+.tcol{position:relative;overflow:hidden}.tcol input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;padding:0;border:0}
+.page{background:#fff;border:1px solid var(--line);border-radius:0 0 8px 8px}
+.pedit{min-height:56vh;padding:30px 40px;outline:none;font-family:var(--ff);font-size:17px;color:#26241f;word-wrap:break-word}
+.pedit:empty::before{content:attr(data-ph);color:var(--mute)}
+.pedit p{margin:0 0 .8em}.pedit h1,.pedit h2,.pedit h3{font-family:var(--ff);line-height:1.25;margin:1em 0 .4em}.pedit h1{font-size:1.7em}.pedit h2{font-size:1.4em}.pedit h3{font-size:1.15em}
+.pedit blockquote{margin:.8em 0;padding:2px 0 2px 16px;border-left:3px solid var(--acc);color:#555}.pedit ul,.pedit ol{margin:0 0 .8em;padding-left:1.6em}.pedit hr{border:none;border-top:1px solid var(--line);margin:1.2em 0}.pedit a{color:var(--acc)}
+.pedit[contenteditable=false]{background:var(--bg)}
+.two2.focus{grid-template-columns:minmax(0,860px);justify-content:center}.two2.focus>div:nth-child(2){display:none}
+#printArea{display:none;font-family:var(--ff)}
+@media print{body{overflow:visible;background:#fff}#app,#toast,#modal{display:none!important}#printArea{display:block;font:12pt/1.6 var(--ff);color:#000}#printArea h1{font-size:20pt}}
+#app.pfocus{grid-template-columns:1fr}#app.pfocus #side{display:none}#app.pfocus #main{padding:0;overflow:hidden}
+.fx{height:100vh;display:flex;flex-direction:column}
+.fxbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--mute)}.fxbar .fxt{font-weight:600;color:var(--ink)}
+.fx .tb{position:static;border-radius:0;border-left:none;border-right:none;justify-content:center}
+.fxscroll{flex:1;overflow:auto;padding:22px 16px 60px;background:var(--bg)}
+.fxscroll .page{max-width:840px;margin:0 auto;border-radius:8px;border-top:1px solid var(--line)}.fx .pedit{min-height:calc(100vh - 210px)}
+.hpill{position:fixed;right:16px;bottom:16px;z-index:50;border-radius:20px;padding:6px 14px;box-shadow:0 2px 10px rgba(0,0,0,.18);font-weight:600}
+.hpop{position:fixed;right:16px;bottom:16px;width:380px;max-height:86vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.28);padding:14px 16px;z-index:90}
+.hpop h4{margin:12px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute)}.hpop ol{margin:0;padding-left:18px;font-size:13px;line-height:1.5}.hpop li{margin-bottom:5px}
+.hgrid{display:flex;flex-wrap:wrap;gap:4px}.hgrid button{min-width:34px;height:34px;padding:0 6px;font-size:17px;font-family:var(--ff)}
+.selbox{background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:13px}
+.hint{font-size:12px;color:var(--mute);margin:4px 0}.hint.ex{color:var(--ok)}
+.row{display:flex;gap:6px;flex-wrap:wrap}.row>*{flex:0 0 auto}.row input{flex:1;min-width:140px}
+.prod{border-top:1px solid var(--line);padding:8px 0}.prod:first-child{border-top:none}
+.prod .who{font-weight:600}.prod .qq{color:var(--mute);font-size:12px}
+.empty{color:var(--mute);padding:30px;text-align:center}
+.sheet h2{font-family:Georgia,serif;margin:20px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.sheet h4{margin:12px 0 2px;font-size:13px;color:var(--mute)}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:7px 14px;border-radius:8px;opacity:0;transition:.25s;pointer-events:none}
+#toast.show{opacity:.95}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <div class="top">
+      <div class="brand">✒︎ Prepare<small>prototype</small></div>
+      <div class="tabs"><button data-act="tab" data-t="seeds">Seeds</button><button data-act="tab" data-t="cards">Cards</button><button data-act="tab" data-t="pieces">Pieces</button><button data-act="tab" data-t="progress">Progress</button></div>
+      <input id="filter" placeholder="Filter…">
+      <div id="newbtn"></div>
+    </div>
+    <div id="list"></div>
+    <div id="foot">
+      <div id="syncbox" style="width:100%;display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div>
+      <button class="sm" data-act="export">Export JSON</button>
+      <button class="sm" data-act="sample">Reset to sample</button>
+      <button class="sm" data-act="blank">Start blank</button>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+<div id="toast"></div>
+<button id="hpill" class="hpill" data-act="hindi" title="Hindi typing help and characters">हिं Hindi</button>
+<div id="printArea"></div>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+function ask(o){return new Promise(res=>{const m=document.createElement('div');m.id='modal';
+  m.innerHTML=`<div class="mbox"><h3>${esc(o.title||'')}</h3>${o.message?`<p>${esc(o.message)}</p>`:''}${o.input?`<input id="mIn" value="${esc(o.value||'')}" placeholder="${esc(o.placeholder||'')}">`:''}<div class="row" style="justify-content:flex-end;margin-top:14px"><button data-m="no">${esc(o.cancel||'Cancel')}</button><button class="pri" data-m="ok">${esc(o.ok||'OK')}</button></div></div>`;
+  document.body.appendChild(m);const inp=m.querySelector('#mIn');if(inp){inp.focus();inp.select()}else m.querySelector('[data-m=ok]').focus();
+  const done=v=>{m.remove();res(v)};
+  m.addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b)done(b.dataset.m==='ok'?(o.input?(inp.value.trim()||null):true):(o.input?null:false));else if(e.target===m)done(o.input?null:false)});
+  m.addEventListener('keydown',e=>{if(e.key==='Enter'&&(inp||document.activeElement.dataset.m!=='no')){e.preventDefault();m.querySelector('[data-m=ok]').click()}else if(e.key==='Escape'){done(o.input?null:false)}})})}
+function dl(name,mime,data){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:mime}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),2000)}
+
+/* ================= THE QUESTIONS ================= */
+const COMMON=[{h:'For every card',qs:['Why did this catch me?','For later (metaphors, leftovers, things to come back to)']}];
+const CARD_TYPES={
+person:{label:'Person',icon:'🧑',groups:[
+ {h:'What you can see and hear',qs:['What do they look like, and how do they dress?','How do they move and carry themselves? Any tics?','What\'s their routine, and where do they go?','What work do they do, and who do they deal with?','How do they talk? Exact phrases, rhythm and words they favour.','What object do they always have or keep?']},
+ {h:'What you know or can find out',qs:['Where are they from? What do you know of their family and upbringing?','What\'s their class background, and where are they now?','What turning points in their life do you actually know of?','What do other people say about them?','How are they connected to you, and how did you meet?']},
+ {h:'Inner life, as evidence',qs:['What do they say they want?','What do they complain about?','Where have you seen their actions contradict their words?','How have you seen them treat people with more power, and with less?','What have you seen them do when they thought nobody was watching?','What do they avoid or hide?']}]},
+place:{label:'Place',icon:'📍',groups:[{h:'The place',qs:['What is it called, and how do you get there?','What do you see first on arriving? How is it laid out?','How does it change by time of day, day of the week, or season?','What are its sounds, smells and temperature?','Who is there: regulars, workers, people passing through?','What happens there: routines, rush hours, rituals?','What are its rules, written and unwritten?','What words are visible: signs, names, prices, notices?','What did it used to be, and what has changed?','What\'s your history with it: the first visit, how often, with whom?','What\'s out of place there?','What would a stranger misread about it?']}]},
+object:{label:'Object',icon:'🧰',groups:[{h:'The object',qs:['What is it? One literal sentence, no comparison.','Size, shape, material, colour, texture, weight.','What can you smell, hear or feel from it?','Whose is it, and how did they get it?','What is it used for, and how is it actually used? Does the use differ from the purpose?','Where is it kept, and who touches it?','What marks of history does it carry: wear, repairs, damage, writing, labels?','What is its value, in money or in feeling, and to whom?','What would change if it were gone?','Where else have you seen it, or things like it?']}]},
+idea:{label:'Idea',icon:'💡',groups:[{h:'The idea',qs:['State the idea in one plain sentence. Where did I first come across it?','What do its key terms mean exactly, and what don\'t they mean?','Who first said it? Who holds it now, and who argues against it?','What is the evidence: data, studies, cases? What would count as evidence against it?','What are the numbers: how many, how much, since when?','What is its history? How did it come about, and what has changed?','Where does it show up? Find three concrete examples: a person, a place, an event.','Find one case that contradicts it.','Who is affected by it? Who gains and who loses?','Who can I talk to or read: experts, and people with first-hand experience?','What is the strongest version of the opposing view?','What do I already believe about it, and why? (A check on my own bias.)','Why do I care about this?','List the sources, each marked verified or claimed.']}]},
+action:{label:'Action',icon:'🔁',groups:[{h:'The action',qs:['What is the action, in one literal sentence?','Step by step, in order, what happens?','Who does it, to whom or what, and who is watching?','Where and when does it usually happen?','What does the body do: hands, posture, pace, sounds?','What does it need: tools, skill, permission, money?','What are the rules or etiquette, spoken and unspoken?','What is the usual version, and what does a variation look like?','What goes wrong, and how do people deal with it?','What does it signal or mean to the people doing it?','Who taught it to them? Has it changed over time?']}]},
+phrase:{label:'Phrase or Line',icon:'💬',groups:[{h:'The line',qs:['The exact words, in the language spoken. How sure am I of the wording: exact, near or paraphrased?','Who said it, and to whom?','Where and when, and what was happening around it?','How was it said: tone, pace, volume, accent, pauses?','What did people do in response?','What does it literally mean, and what is it really doing (asking, deflecting, boasting)?','Is it habitual for this speaker? Does a group use it?','Which words are unusual, regional or borrowed?','Why does it stay with me?']}]}
+};
+const DIG=['When and where did it happen? Time of day, weather.','Who was there, and where was each person?','What happened, step by step, in order?','What happened just before, and just after?','What was said? Write the exact words you remember.','What did you do with your body: where you stood, what your hands were doing?','What did you feel physically at that moment (not what you feel about it now)?','What objects were involved?','Which moment do you replay most?','What don\'t you know about it? Who else was there, and what might they remember differently?','Who had the power in the room, and did it shift?','What exactly do you see: shape, colour, size, texture?','What\'s around it, the frame it sits in?','What light is it in?','What can you hear, smell or feel near it?','Is it still or moving? What changes if you keep watching?','What\'s the one detail most people would miss?','Have you seen it before? Does it recur?','Describe it in one literal sentence, with no comparison.','What made you stop and look?'];
+
+/* ================= YOUR PROCESS (from the Writing Desk) ================= */
+const PERSONAS={lwl:['Long Winded Lady','Collecting reports from real life and committing them to language. Pure documentation.'],trevor:['Trevor','The inner lives of other people, and how outside and inside circumstances shape them. Full access to everything.'],parsai:['Parsai','The absurdities and incongruities of life. An itch that only writing something funny can sate.'],didion:['Didion','The inner life of the self, and how outside and inside circumstances shape it.'],samanth:['Samanth','A place, person, phenomenon or idea, approached journalistically. The I is absent; limited access to other people\'s inner lives.']};
+const STUCK=['Be more honest','Describe the physical in a literal sense','Look, write, look','Make it vivid with a metaphor or simile','One true sentence: write a literal truth','Create a surprise, something unexpected','Make it direct: the shortest distance to the idea','Cut out adverbs','Practise estrangement (defamiliarisation)'];
+const REST_DAYS=3,LOCK=2000;
+const PHASES={
+ prepare:{label:'Prepare the ground',short:'Prepare',details:'Collect bits about the piece. Force yourself to remember instances related to the theme. Choose a narrator persona, a premise and a hypothesis below, then complete this phase.',outcomes:{complete:'Complete',continue:'Continue'}},
+ play:{label:'Play',short:'Play',details:'Become the persona and write the copy. Writing generates more writing; let the text tell you where it wants to go. If you need new information, go back to Prepare.',outcomes:{complete:'Complete',continue:'Continue',prep:'Prep needed'}},
+ close:{label:'Close read',short:'Close read',details:'After leaving the piece for a few days, come back to it as a reader. Read it as a PDF. Don\'t edit; only mark the places where it fails. If it needs more writing, send it back to Play.',outcomes:{complete:'Complete',continue:'Continue',play:'Play needed'}},
+ edit:{label:'Edit',short:'Edit',details:'Make the changes you think the piece needs. Go back to Prepare or Play if the marks call for it.',outcomes:{complete:'Complete',continue:'Continue',prep:'Prep needed',play:'Play needed'}},
+ done:{label:'Ready to publish',short:'Done',details:'Finished. Schedule it, then mark it published.',outcomes:{}}
+};
+const ORDER=['prepare','play','close','edit','done'];
+const NEXT={prepare:{complete:'play'},play:{complete:'close',prep:'prepare'},close:{complete:'edit',play:'play'},edit:{complete:'done',prep:'prepare',play:'play'}};
+const P=x=>{const [y,m,d]=x.split('-').map(Number);return new Date(y,m-1,d)};
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const TODAY=()=>iso(new Date());
+const add=(x,n)=>{const d=P(x);d.setDate(d.getDate()+n);return iso(d)};
+const diff=(a,b)=>Math.round((P(a)-P(b))/864e5);
+const fmtD=x=>P(x).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+const words=t=>((t||'').trim().match(/\S+/g)||[]).length;
+const wcount=p=>words(p.text);
+
+const DEV="'Kohinoor Devanagari','Devanagari Sangam MN','Noto Sans Devanagari','Noto Serif Devanagari',Mangal";
+const FONTS={
+ sys:['Clean sans (closest to Claude)',`-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',${DEV},sans-serif`],
+ avenir:['Avenir Next (friendly sans)',`'Avenir Next',Avenir,${DEV},sans-serif`],
+ helv:['Helvetica Neue (classic sans)',`'Helvetica Neue',Helvetica,${DEV},sans-serif`],
+ georgia:['Georgia (serif)',`Georgia,'Iowan Old Style',${DEV},serif`]
+};
+function fontStack(){return (FONTS[db.prefs.font]||FONTS.sys)[1]}
+function applyFont(){document.documentElement.style.setProperty('--ff',fontStack())}
+/* text <-> html helpers */
+function textToHtml(t){return (t||'').split(/\n{2,}/).filter(x=>x.length).map(par=>'<p>'+esc(par).replace(/\n/g,'<br>')+'</p>').join('')}
+function htmlToText(h){const d=document.createElement('div');d.innerHTML=(h||'').replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|h[1-6]|li|blockquote|tr)>/gi,'\n');return d.textContent.replace(/\u00a0/g,' ').replace(/\n{3,}/g,'\n\n').trim()}
+function cleanHTML(h){const doc=new DOMParser().parseFromString(h,'text/html');
+  const OK={B:'b',STRONG:'b',I:'i',EM:'i',U:'u',S:'s',STRIKE:'s',DEL:'s',H1:'h1',H2:'h2',H3:'h3',H4:'h3',H5:'h3',H6:'h3',P:'p',UL:'ul',OL:'ol',LI:'li',BLOCKQUOTE:'blockquote',BR:'br',HR:'hr'};
+  const walk=n=>{if(n.nodeType===3)return esc(n.nodeValue);if(n.nodeType!==1)return '';const t=n.tagName;
+    if(['SCRIPT','STYLE','META','LINK','HEAD','TITLE'].includes(t))return '';
+    const inner=[...n.childNodes].map(walk).join('');
+    if(t==='A'){const hr=n.getAttribute('href')||'';return /^(https?:|mailto:)/i.test(hr)?`<a href="${esc(hr)}">${inner}</a>`:inner}
+    if(t==='DIV')return inner.trim()?`<p>${inner}</p>`:'';
+    if(t==='SPAN'){const st=n.getAttribute('style')||'';let r=inner;if(/font-weight:\s*(bold|[6-9]00)/i.test(st))r=`<b>${r}</b>`;if(/font-style:\s*italic/i.test(st))r=`<i>${r}</i>`;if(/text-decoration[^;]*underline/i.test(st))r=`<u>${r}</u>`;if(/text-decoration[^;]*line-through/i.test(st))r=`<s>${r}</s>`;return r}
+    const tag=OK[t];if(!tag)return inner;if(tag==='br'||tag==='hr')return `<${tag}>`;
+    if((t==='B'||t==='STRONG')&&/font-weight:\s*(normal|400)/i.test(n.getAttribute('style')||''))return inner;
+    return `<${tag}>${inner}</${tag}>`};
+  return [...doc.body.childNodes].map(walk).join('')}
+/* ================= STATE ================= */
+const KEY='prepare-poc-v3';
+let db;
+const ui={tab:'seeds',sel:null,from:null,adding:null,draft:{},ev:{},filter:'',excerpt:'',newCard:false,day:null,pFocus:false};
+
+function blankDB(){return{seeds:[],cards:[],pieces:[],log:[],events:[]}}
+function norm(){db.log=db.log||[];db.events=db.events||[];db.prefs=db.prefs||{};if(!db.prefs.lh)db.prefs.lh='1.7';if(!db.prefs.font||!FONTS[db.prefs.font])db.prefs.font='sys';if(db.prefs.spell==null)db.prefs.spell=true;db.pieces.forEach(p=>{if(p.text==null)p.text='';if(p.html==null)p.html=textToHtml(p.text);p.phase=p.phase||'prepare';p.status=p.status||'active';p.phaseSince=p.phaseSince||TODAY();['marks','note','persona','premise','hyp'].forEach(k=>{if(p[k]==null)p[k]=''})})}
+function sampleDB(){
+  const d=blankDB();
+  const mk=(o)=>({id:uid(),...o});
+  const cab=mk({type:'place',name:'Aircraft cabin',aliases:['the plane','cabin'],answers:[],mentions:[]});
+  const mid=mk({type:'object',name:'Middle seat',aliases:[],answers:[],mentions:[]});
+  const man=mk({type:'person',name:'Man at the window seat',aliases:[],answers:[],mentions:[]});
+  const gub=mk({type:'phrase',name:'whey protein gubaara',aliases:[],answers:[],mentions:[]});
+  const crew=mk({type:'person',name:'Cabin crew member',aliases:[],answers:[],mentions:[]});
+  const s1=mk({title:'',text:'While flying to Pune, I got the last seat on the plane. It felt a bit claustrophobic. On top of it, it was the middle seat. The man who came and sat at the window seat was fat. He was a whey protein gubaara. I have never taken a flight more uncomfortable.',why:'I could not tell whether I was irritated at him or at the seat.',later:'',dig:{},cards:[cab.id,mid.id,man.id,gub.id]});
+  const s2=mk({title:'The hip bump',text:'On the Delhi to Mumbai flight, from the aisle, I watched a crew member shut an overhead bin with her hip, without looking, like she had done it a million times.',why:'The ease of it, in a space where everyone else was cramped.',later:'',dig:{},cards:[cab.id,crew.id]});
+  const m=(card,seed,text)=>card.mentions.push({id:uid(),seed:seed.id,text});
+  m(cab,s1,'the plane');m(mid,s1,'the middle seat');m(man,s1,'The man who came and sat at the window seat');m(gub,s1,'whey protein gubaara');m(crew,s2,'a crew member');
+  cab.answers=[
+   {id:uid(),q:'place.0.1',text:'Rows of three and three. The last rows sit close to the toilets, so the foot traffic never stops.',seed:s1.id,ev:'observed'},
+   {id:uid(),q:'place.0.3',text:'Recycled warm air, a faint smell of food trolleys, a constant low hum.',seed:s1.id,ev:'observed'},
+   {id:uid(),q:'place.0.3',text:'On the Delhi flight it was colder and quieter. The engine hum made people lower their voices.',seed:s2.id,ev:'observed'}];
+  mid.answers=[{id:uid(),q:'object.0.1',text:'Narrow, with both armrests already claimed by the people on either side.',seed:s1.id,ev:'observed'}];
+  man.answers=[{id:uid(),q:'person.0.0',text:'Broad shoulders, a gym T-shirt a size too small, an arm that spilled slightly into my seat.',seed:s1.id,ev:'observed'}];
+  gub.answers=[
+   {id:uid(),q:'phrase.0.0',text:'My own phrase, never said aloud. Gubaara means balloon.',seed:s1.id,ev:'observed'},
+   {id:uid(),q:'phrase.0.5',text:'Literally a balloon filled with whey protein. What it is doing: mocking a puffed-up gym body as hollow.',seed:s1.id,ev:'assumed'}];
+  crew.answers=[{id:uid(),q:'person.0.1',text:'Moved through the aisle without touching anyone. Closed the bin with a hip bump, never looking.',seed:s2.id,ev:'observed'}];
+  d.cards=[cab,mid,man,gub,crew];d.seeds=[s1,s2];
+  d.pieces=[mk({title:'Flights essay (idea)',seeds:[s1.id,s2.id],cards:[cab.id]})];
+  return d;
+}
+function load(){try{const s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return null}}
+let dirH=null,pushT=null,pushing=false,syncing=false,lastSaved=null,stMsg='';
+const seedSig=new Map();
+const sig=x=>JSON.stringify([x.title,x.text,x.why,x.later,x.dig]);
+function stamp(keep){const now=Date.now();db.tomb=db.tomb||{};db.syncBase=db.syncBase||{};const ids=new Set();
+  for(const x of db.seeds){ids.add(x.id);const g=sig(x);if(!seedSig.has(x.id)){seedSig.set(x.id,g);if(!x.updated)x.updated=now}else if(seedSig.get(x.id)!==g){seedSig.set(x.id,g);x.updated=now}}
+  for(const id of [...seedSig.keys()])if(!ids.has(id)){seedSig.delete(id);db.tomb[id]=now}
+  if(!keep||!db.savedAt)db.savedAt=keep?0:now}
+function save(){try{stamp();localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}schedulePush()}
+db=load()||blankDB();norm();
+db.seeds.forEach(x=>{seedSig.set(x.id,sig(x));if(!x.updated)x.updated=db.savedAt||1});stamp(true);try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}
+/* ---------- Folder sync (Chrome, File System Access API) ---------- */
+const CAN_FS=typeof window.showDirectoryPicker==='function';
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open('mehfil-fs',1);r.onupgradeneeded=()=>r.result.createObjectStore('h');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+async function hGet(){try{const d=await idb();return await new Promise(res=>{const q=d.transaction('h').objectStore('h').get('dir');q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)})}catch(e){return null}}
+async function hSet(h){try{const d=await idb();await new Promise(res=>{const t=d.transaction('h','readwrite');t.objectStore('h').put(h,'dir');t.oncomplete=res;t.onerror=res})}catch(e){}}
+function setSt(state,msg){stMsg=state;const el=document.getElementById('syncbox');if(!el)return;
+  const t=x=>new Date(x).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  let h='';
+  if(!CAN_FS)h='<div class="syn warn">Folder saving needs Google Chrome on the Mac. Your writing is still saved inside this browser.</div>';
+  else if(state==='none')h='<div class="syn">Not saving to a folder yet.</div><button class="sm pri" data-act="folder">Choose Mehfil folder</button>';
+  else if(state==='prompt')h='<div class="syn warn">Folder “'+esc(dirH?dirH.name:'Mehfil')+'” needs your OK again.</div><button class="sm pri" data-act="reconnect">Reconnect folder</button>';
+  else if(state==='saving')h='<div class="syn">Saving to “'+esc(dirH.name)+'”…</div>';
+  else if(state==='ok')h='<div class="syn ok">✓ Saved to “'+esc(dirH.name)+'”'+(lastSaved?' at '+t(lastSaved):'')+'</div><button class="sm" data-act="syncnow">Sync now</button><button class="sm ghost" data-act="folder">Change folder</button>';
+  else if(state==='err')h='<div class="syn warn">Could not save to the folder: '+esc(msg||'')+'. Your writing is safe in this browser.</div><button class="sm" data-act="syncnow">Try again</button>';
+  el.innerHTML=h}
+function schedulePush(){if(!dirH)return;clearTimeout(pushT);pushT=setTimeout(push,1200);if(stMsg==='ok')setSt('saving')}
+async function wr(dir,name,obj){const fh=await dir.getFileHandle(name,{create:true});const w=await fh.createWritable();await w.write(JSON.stringify(obj,null,1));await w.close()}
+async function push(){if(!dirH)return;if(pushing){schedulePush();return}pushing=true;
+  try{const sd=await dirH.getDirectoryHandle('seeds',{create:true});const base=db.syncBase=db.syncBase||{};
+    for(const x of db.seeds){if(base[x.id]!==x.updated){await wr(sd,x.id+'.json',{id:x.id,title:x.title,text:x.text,why:x.why,later:x.later,dig:x.dig||{},updated:x.updated});base[x.id]=x.updated}}
+    for(const [id,t] of Object.entries(db.tomb||{})){if(base[id]!==t){await wr(sd,id+'.json',{id,deleted:true,updated:t});base[id]=t}}
+    const lib=Object.assign({},db,{seeds:undefined,seedCards:Object.fromEntries(db.seeds.map(x=>[x.id,x.cards||[]]))});
+    await wr(dirH,'library.json',lib);lastSaved=Date.now();
+    try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}
+    setSt('ok')}catch(e){setSt('err',e.message)}
+  pushing=false}
+function dropSeed(id){db.seeds=db.seeds.filter(x=>x.id!==id);seedSig.delete(id);db.cards.forEach(c=>{c.answers.forEach(a=>{if(a.seed===id)a.seed=null});c.mentions=(c.mentions||[]).filter(m=>m.seed!==id)});db.pieces.forEach(p=>{p.seeds=(p.seeds||[]).filter(x=>x!==id)})}
+async function pull(libCards){const sd=await dirH.getDirectoryHandle('seeds',{create:true});const changed=new Set();const base=db.syncBase=db.syncBase||{};db.tomb=db.tomb||{};
+  for await(const [n,h] of sd.entries()){if(!n.endsWith('.json')||h.kind!=='file')continue;let f;try{f=JSON.parse(await (await h.getFile()).text())}catch(e){continue}if(!f||!f.id)continue;
+    const loc=seedById(f.id);const fu=f.updated||0;
+    if(f.deleted){db.tomb[f.id]=Math.max(db.tomb[f.id]||0,fu);base[f.id]=fu;if(loc&&(loc.updated||0)<=fu){dropSeed(f.id);changed.add(f.id)}continue}
+    if(!loc){if((db.tomb[f.id]||0)>=fu&&db.tomb[f.id])continue;db.seeds.unshift({id:f.id,title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{},cards:(libCards&&libCards[f.id])||[],updated:fu});seedSig.set(f.id,sig(seedById(f.id)));base[f.id]=fu;changed.add(f.id);continue}
+    if(fu>(loc.updated||0)){
+      const same=sig(loc)===sig({title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{}});
+      if(!same&&(loc.updated||0)>(base[f.id]||0)){ /* edited on both sides: keep both */
+        db.seeds.unshift({id:uid(),title:(loc.title||'')+' (copy from this Mac)',text:loc.text,why:loc.why,later:loc.later,dig:loc.dig||{},cards:[],updated:Date.now()});seedSig.set(db.seeds[0].id,sig(db.seeds[0]));toast('A seed was edited on two devices. Both versions are kept.')}
+      Object.assign(loc,{title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{},updated:fu});seedSig.set(loc.id,sig(loc));base[f.id]=fu;changed.add(f.id)}
+    else if(fu===(loc.updated||0))base[f.id]=fu}
+  return changed}
+async function syncNow(quiet){if(!dirH||syncing)return;syncing=true;
+  try{const ch=await pull();stamp();try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}
+    if(ch.size){const open=ui.sel&&ui.sel.k==='seeds'&&ch.has(ui.sel.id);if(ui.sel&&ui.sel.k==='seeds'&&!seedById(ui.sel.id)){ui.sel=db.seeds[0]?{k:'seeds',id:db.seeds[0].id}:null;render()}else if(open)render();else renderLeft();if(!quiet)toast(ch.size+' seed'+(ch.size>1?'s':'')+' updated from the folder.')}
+    await push()}catch(e){setSt('err',e.message)}
+  syncing=false}
+async function connect(h,fresh){dirH=h;if(fresh){db.syncBase={}}
+  try{let lib=null;try{lib=JSON.parse(await (await (await h.getFileHandle('library.json')).getFile()).text())}catch(e){}
+    const empty=!db.seeds.length&&!db.cards.length&&!db.pieces.length&&!db.log.length;
+    if(lib&&lib.savedAt&&(empty||lib.savedAt>(db.savedAt||0)+1000)){
+      const when=new Date(lib.savedAt).toLocaleString();
+      if(await ask({title:'This folder has a newer library',message:'The folder “'+h.name+'” was saved on '+when+'. Load it here? Choose “Keep mine” to keep what is on this screen and overwrite the folder instead.',ok:'Load the folder’s library',cancel:'Keep mine'})){
+        const seedCards=lib.seedCards||{};db=Object.assign(blankDB(),lib);delete db.seedCards;db.seeds=[];seedSig.clear();db.syncBase={};norm();
+        const ch=await pull(seedCards);void ch;stamp();ui.sel=db.seeds[0]?{k:'seeds',id:db.seeds[0].id}:null;ui.from=ui.sel?ui.sel.id:null;try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}render();await push();return}}
+    await syncNow(true)}catch(e){setSt('err',e.message)}}
+async function chooseFolder(){try{const h=await window.showDirectoryPicker({mode:'readwrite',id:'mehfil'});await hSet(h);await connect(h,true)}catch(e){if(e&&e.name!=='AbortError')setSt('err',e.message)}}
+async function reconnect(){if(!dirH)return;try{const p=await dirH.requestPermission({mode:'readwrite'});if(p==='granted')await connect(dirH,false);else setSt('prompt')}catch(e){setSt('err',e.message)}}
+async function initFolder(){setSt('none');if(!CAN_FS)return;const h=await hGet();if(!h)return;dirH=h;
+  let p='prompt';try{p=await h.queryPermission({mode:'readwrite'})}catch(e){}
+  if(p==='granted')await connect(h,false);else setSt('prompt')}
+window.addEventListener('focus',()=>{if(dirH&&stMsg!=='prompt')syncNow(true)});
+
+ui.sel=db.seeds[0]?{k:'seeds',id:db.seeds[0].id}:null;ui.from=ui.sel?ui.sel.id:null;
+
+const seedById=id=>db.seeds.find(s=>s.id===id);
+const cardById=id=>db.cards.find(c=>c.id===id);
+const pieceById=id=>db.pieces.find(p=>p.id===id);
+const activeP=()=>db.pieces.filter(p=>p.status==='active');
+const locked=()=>activeP().find(p=>wcount(p)<LOCK&&p.phase!=='done');
+const restUntil=p=>p.phase==='close'&&p.restFrom?add(p.restFrom,REST_DAYS):null;
+const resting=p=>{const r=restUntil(p);return !!r&&diff(r,TODAY())>0};
+const trk={last:0};
+function logFor(area,ref,title,phase){phase=phase||'';let e=db.log.find(x=>x.date===TODAY()&&(x.area||'piece')===area&&(x.ref||x.piece)===ref&&(x.phase||'')===phase);
+  if(!e){e={id:uid(),date:TODAY(),area,ref,title,phase,words:0,secs:0,outcome:'',note:''};if(area==='piece')e.piece=ref;db.log.push(e)}return e}
+function getLog(p){return logFor('piece',p.id,p.title,p.phase)}
+function trackAdd(area,ref,title,phase,dw){const now=Date.now();const secs=(trk.last&&now-trk.last<=60000)?(now-trk.last)/1000:5;trk.last=now;const e=logFor(area,ref,title,phase);e.title=title;e.words=Math.max(0,e.words+dw);e.secs+=secs}
+function trackWrite(p,dw){trackAdd('piece',p.id,p.title,p.phase,dw)}
+function evt(type,ref,title){db.events.push({id:uid(),date:TODAY(),type,ref:ref||'',title:title||''})}
+const mins=sec=>sec<=0?'0':sec<60?'<1':String(Math.round(sec/60));
+function todayStats(p){const es=db.log.filter(e=>e.date===TODAY()&&e.piece===p.id);return{words:es.reduce((a,e)=>a+e.words,0),secs:es.reduce((a,e)=>a+e.secs,0)}}
+function streak(){const by={};db.log.forEach(e=>{by[e.date]=(by[e.date]||0)+e.words});let d=TODAY(),n=0;if(!(by[d]>0))d=add(d,-1);while(by[d]>0){n++;d=add(d,-1)}return n}
+function dayStats(d){
+  const es=db.log.filter(e=>e.date===d),ev=(db.events||[]).filter(e=>e.date===d);
+  const A=a=>es.filter(e=>(e.area||'piece')===a),sum=(arr,k)=>arr.reduce((x,e)=>x+e[k],0),cnt=t=>ev.filter(x=>x.type===t).length;
+  const pe=A('piece'),se=A('seed'),ce=A('card');
+  return{d,pe,se,ce,pw:sum(pe,'words'),ps:sum(pe,'secs'),sw:sum(se,'words'),ss:sum(se,'secs'),cw:sum(ce,'words'),cs:sum(ce,'secs'),
+   prepW:sum(se,'words')+sum(ce,'words'),prepS:sum(se,'secs')+sum(ce,'secs'),
+   seeds:cnt('seed_new'),cardsNew:cnt('card_new'),reused:cnt('card_reused'),answers:cnt('answer'),quotes:cnt('quote'),pulls:cnt('pull'),
+   any:es.some(e=>e.words>0||e.outcome)||ev.length>0}
+}
+function lastActiveBefore(d){const ds=[...new Set([...db.log.map(e=>e.date),...db.events.map(e=>e.date)])].filter(x=>x<d).sort();return ds.pop()||null}
+function qTotal(c){const def=CARD_TYPES[c.type];return [...def.groups,...COMMON].reduce((a,g)=>a+g.qs.length,0)}
+function qAnswered(c){return new Set(live(c).map(a=>a.q)).size}
+function pipeline(){
+  const seedsWaiting=db.seeds.filter(x=>(x.text||'').trim()&&!x.cards.length).length;
+  const emptyCards=db.cards.filter(c=>!live(c).length).length;
+  const ans=db.cards.reduce((a,c)=>a+qAnswered(c),0),tot=db.cards.reduce((a,c)=>a+qTotal(c),0);
+  const reusedCards=db.cards.filter(c=>seedsOfCard(c).length>=2).length;
+  const inPieces=new Set();db.pieces.forEach(p=>{p.cards.forEach(i=>inPieces.add(i));p.seeds.map(seedById).filter(Boolean).forEach(x=>x.cards.forEach(i=>inPieces.add(i)))});
+  return{seeds:db.seeds.length,seedsWaiting,cards:db.cards.length,emptyCards,ans,tot,cover:tot?Math.round(ans/tot*100):0,reusedCards,used:[...inPieces].filter(i=>cardById(i)).length}
+}
+function defaultDay(){const y=add(TODAY(),-1);return dayStats(y).any?y:(lastActiveBefore(TODAY())||y)}
+function pick(){
+  const L=locked();
+  if(L){if(!resting(L))return{piece:L,why:`You're on this piece until it reaches ${LOCK.toLocaleString()} words. ${Math.max(0,LOCK-wcount(L)).toLocaleString()} to go.`};
+    return{rest:L,why:`“${L.title}” is resting until ${fmtD(restUntil(L))}. It hasn't reached ${LOCK.toLocaleString()} words yet, so no new piece today. Use the time for your seeds and cards.`}}
+  const work=activeP().filter(p=>p.phase!=='done'&&!resting(p));
+  work.sort((a,b)=>ORDER.indexOf(b.phase)-ORDER.indexOf(a.phase)||(a.phaseSince||'').localeCompare(b.phaseSince||''));
+  if(work.length)return{piece:work[0],why:work[0].phase==='close'?'It has rested long enough to read with fresh eyes.':'The piece closest to finished comes first.'};
+  const rs=activeP().filter(resting);
+  if(db.seeds.length)return{start:true,why:rs.length?`${rs.map(p=>`“${p.title}”`).join(', ')} ${rs.length>1?'are':'is'} resting. Start a new piece from your seeds.`:'Nothing is in progress. Start a new piece from your seeds.'};
+  return{none:true,why:'Nothing is in progress and you have no seeds yet. Write a seed to begin.'}
+}
+const snip=t=>{const w=(t||'').trim().split(/\s+/).filter(Boolean);return w.slice(0,8).join(' ')+(w.length>8?'…':'')};
+const seedName=s=>s.title&&s.title.trim()?s.title.trim():(snip(s.text)||'Untitled seed');
+const seedLabel=s=>s?`🌱 ${seedName(s)}`:'no seed';
+function findCard(type,name){const n=name.trim().toLowerCase();return db.cards.find(c=>c.type===type&&(c.name.toLowerCase()===n||(c.aliases||[]).some(a=>a.toLowerCase()===n)))}
+const live=c=>c.answers.filter(a=>a.text&&a.text.trim());
+function seedsOfCard(c){const ids=new Set(live(c).map(a=>a.seed).filter(Boolean));db.seeds.forEach(s=>{if((s.cards||[]).includes(c.id))ids.add(s.id)});return [...ids].map(seedById).filter(Boolean)}
+function attach(seed,card){if(!seed.cards.includes(card.id)){seed.cards.push(card.id);return true}return false}
+
+/* ================= RENDER: LEFT ================= */
+function renderLeft(){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===ui.tab));
+  const f=ui.filter.toLowerCase(),L=$('#list');let h='';
+  if(ui.tab==='seeds'){
+    $('#newbtn').innerHTML=`<button class="pri" data-act="newseed" style="width:100%">＋ Write a new seed</button>`;
+    const list=db.seeds.filter(s=>!f||seedName(s).toLowerCase().includes(f)||(s.text||'').toLowerCase().includes(f));
+    h=list.map(s=>`<div class="item ${ui.sel&&ui.sel.id===s.id?'sel':''}" data-act="open" data-k="seeds" data-id="${s.id}"><span>${seedLabel(s)}</span><small>${s.cards.length} cards</small></div>`).join('')||'<div class="empty">No seeds yet.</div>';
+  }else if(ui.tab==='cards'){
+    $('#newbtn').innerHTML=`<div class="hint">Cards are made while you deconstruct a seed, or here:</div><div class="row"><select id="nct"><option value="">Choose type…</option>${Object.entries(CARD_TYPES).map(([k,v])=>`<option value="${k}">${v.icon} ${v.label}</option>`).join('')}</select><button data-act="newcard">＋ New card</button></div>`;
+    for(const [t,def] of Object.entries(CARD_TYPES)){
+      const cs=db.cards.filter(c=>c.type===t&&(!f||c.name.toLowerCase().includes(f)||c.aliases.some(a=>a.toLowerCase().includes(f))));
+      if(!cs.length)continue;
+      h+=`<h6>${def.icon} ${({person:'People',place:'Places',object:'Objects',idea:'Ideas',action:'Actions',phrase:'Phrases & lines'})[t]}</h6>`+cs.map(c=>`<div class="item ${ui.sel&&ui.sel.id===c.id?'sel':''}" data-act="open" data-k="cards" data-id="${c.id}"><span>${esc(c.name||'Untitled')}</span><small>${seedsOfCard(c).length} seed${seedsOfCard(c).length===1?'':'s'}</small></div>`).join('');
+    }
+    h=h||'<div class="empty">No cards yet.</div>';
+  }else if(ui.tab==='progress'){
+    $('#newbtn').innerHTML='<div class="hint">Counted automatically as you write seeds, answer card questions and write pieces. There is nothing to log.</div>';
+    h='';
+  }else{
+    $('#newbtn').innerHTML=`<button class="pri" data-act="newpiece">＋ New piece</button>`;
+    h=db.pieces.filter(p=>!f||p.title.toLowerCase().includes(f)).map(p=>`<div class="item ${ui.sel&&ui.sel.id===p.id?'sel':''}" data-act="open" data-k="pieces" data-id="${p.id}"><span>📄 ${esc(p.title)}</span><small>${PHASES[p.phase].short} · ${wcount(p).toLocaleString()} w</small></div>`).join('')||'<div class="empty">No pieces yet.</div>';
+  }
+  L.innerHTML=h;
+}
+
+/* ================= RENDER: MAIN ================= */
+function render(){applyFont();$('#app').classList.toggle('pfocus',!!(ui.pFocus&&ui.tab==='pieces'&&ui.sel&&ui.sel.k==='pieces'&&pieceById(ui.sel.id)));renderLeft();const m=$('#main');const st=m.scrollTop;
+  if(ui.tab==='progress'){m.innerHTML=progressView();m.scrollTop=st;afterRender();return}
+  if(!ui.sel){m.innerHTML='<div class="empty">Create or pick a seed on the left.</div>';return}
+  const k=ui.sel.k;
+  if(k==='seeds'&&seedById(ui.sel.id))m.innerHTML=seedView(seedById(ui.sel.id));
+  else if(k==='cards'&&cardById(ui.sel.id))m.innerHTML=cardView(cardById(ui.sel.id));
+  else if(k==='pieces'&&pieceById(ui.sel.id))m.innerHTML=pieceView(pieceById(ui.sel.id));
+  else m.innerHTML='<div class="empty">Nothing selected.</div>';
+  m.scrollTop=st;hint();
+  if(ui.adding){const ta=document.querySelector('.addbox textarea');if(ta)ta.focus()}
+  afterRender();
+}
+
+/* ---- seed view ---- */
+const cut=(t,n)=>{t=(t||'').replace(/\s+/g,' ').trim();return t.length>n?t.slice(0,n)+'…':t};
+function cardTile(c,s,attached){
+  const as=live(c),mine=(c.mentions||[]).find(m=>m.seed===s.id),n=seedsOfCard(c).length;
+  const hay=(c.name+' '+(c.aliases||[]).join(' ')+' '+CARD_TYPES[c.type].label).toLowerCase();
+  return `<div class="icard ${attached?'':'lib'}" data-act="${attached?'opencard':'pullcard'}" data-id="${c.id}" data-from="${s.id}" data-hay="${esc(hay)}">
+   <div class="ih"><span>${CARD_TYPES[c.type].icon}</span><b>${esc(c.name)}</b></div>
+   <div class="it">${CARD_TYPES[c.type].label}${attached?'':' · tap to add to this seed'}</div>
+   ${mine?`<div class="iq">“${esc(cut(mine.text,80))}”</div>`:''}
+   <ul>${as.slice(-2).map(a=>`<li>${esc(cut(a.text,70))}</li>`).join('')}</ul>
+   <div class="if">${as.length} answer${as.length===1?'':'s'} · ${n} seed${n===1?'':'s'}</div></div>`;
+}
+function seedView(s){
+  const attached=s.cards.map(cardById).filter(Boolean);
+  const others=db.cards.filter(c=>!s.cards.includes(c.id));
+  const form=ui.newCard?`<div class="sec newform"><h3 style="margin-bottom:6px">New card</h3>
+    <div class="selbox" id="selBox">${ui.excerpt?`Linked to your words: “${esc(ui.excerpt)}” <a class="from" data-act="clearsel">clear</a>`:'<span class="hint">Tip: select words in your seed first and they will be linked to this card.</span>'}</div>
+    <div class="row"><select id="dType"><option value="">Choose card type…</option>${Object.entries(CARD_TYPES).map(([k,v])=>`<option value="${k}">${v.icon} ${v.label}</option>`).join('')}</select><input id="dName" list="dl" placeholder="Name the card" autocomplete="off"><button class="pri" data-act="decon" data-id="${s.id}">Add card</button><button class="ghost" data-act="cancelnew">Cancel</button></div>
+    <datalist id="dl"></datalist><div class="hint" id="dHint"></div></div>`:'';
+  return `<div class="wrap"><div class="head" style="justify-content:flex-end"><button class="ghost" data-act="delseed" data-id="${s.id}">Delete seed</button></div>
+  <textarea id="seedtext" data-bind="seedtext" placeholder="Write your seed here…" style="min-height:200px;font-family:var(--ff);font-size:17px;line-height:1.7;padding:16px 18px">${esc(s.text||'')}</textarea>
+  <div class="cardsHead"><h3>Cards for this seed</h3></div>
+  ${form}
+  <div class="igrid">${attached.map(c=>cardTile(c,s,true)).join('')}${ui.newCard?'':`<div class="icard newc" data-act="newcardform"><b>＋ New card</b><div class="it">Person, place, object, idea, action, phrase</div></div>`}</div>
+  ${others.length?`<div class="cardsHead" style="margin-top:26px"><h3>Pick from your other cards</h3><input id="libf" placeholder="Filter…" style="max-width:200px"></div><div class="igrid" id="libgrid">${others.map(c=>cardTile(c,s,false)).join('')}</div>`:''}
+  </div>`;
+}
+function qFor(type,id){const def=CARD_TYPES[type];const [,g,q]=id.split('.');const groups=def.groups.concat(COMMON);return (groups[+g]&&groups[+g].qs[+q])||id}
+
+/* ---- card view ---- */
+function evSel(a){return `<select class="ev ${a.ev||'none'}" data-bind="ev" data-aid="${a.id}">${['','observed','told','assumed'].map(e=>`<option value="${e}" ${e===(a.ev||'')?'selected':''}>${e||'evidence? (optional)'}</option>`).join('')}</select>`}
+function metaHTML(a){const sd=a.seed?seedById(a.seed):null;return `<div class="meta"><a class="from" ${sd?`data-act="open" data-k="seeds" data-id="${sd.id}"`:''}>from: ${sd?esc(seedLabel(sd)):'no seed'}</a>${evSel(a)}<button class="sm ghost" data-act="delans" data-aid="${a.id}">remove</button></div>`}
+function answerHTML(a){return `<div class="answ" data-aid="${a.id}"><textarea data-bind="ans" data-aid="${a.id}">${esc(a.text)}</textarea>${metaHTML(a)}</div>`}
+function newBoxHTML(){return `<div class="answ new"><textarea data-bind="newans" placeholder="Write here…"></textarea></div>`}
+
+function cardView(c){
+  const def=CARD_TYPES[c.type];
+  const groups=[...def.groups,...COMMON];
+  const from=ui.from&&seedById(ui.from)?seedById(ui.from):null;
+  const bar=`<div class="from-bar ${from?'':'none'}"><b>Working from:</b><select data-bind="from">${`<option value="">— no seed (general) —</option>`+db.seeds.map(s=>`<option value="${s.id}" ${from&&from.id===s.id?'selected':''}>${esc(seedLabel(s))}</option>`).join('')}</select><span class="hint" style="margin:0">${from?'New answers will be linked to this seed.':'New answers will not be linked to any seed. Pick one to link them.'}</span></div>`;
+  const body=groups.map((g,gi)=>`<div class="grp">${esc(g.h)}</div><div class="qgrid">`+g.qs.map((q,qi)=>{
+    const id=(gi<def.groups.length?c.type:'common')+'.'+gi+'.'+qi;
+    const as=c.answers.filter(a=>a.q===id&&a.text&&a.text.trim());
+    return `<div class="q qcard ${as.length?'done':''}" data-cid="${c.id}" data-qid="${id}"><label>${esc(q)}</label>${as.map(answerHTML).join('')}${newBoxHTML()}</div>`}).join('')+`</div>`).join('');
+  const sds=seedsOfCard(c);
+  return `<div class="wrap" style="max-width:1200px"><div class="head"><span class="badge">${def.icon} ${def.label}</span><input class="title" data-bind="cardname" value="${esc(c.name)}" placeholder="Name"><button class="ghost" data-act="delcard" data-id="${c.id}">Delete</button></div>
+  <div class="row" style="margin-bottom:10px"><input data-bind="cardalias" value="${esc((c.aliases||[]).join(', '))}" placeholder="Other names (comma separated), so it is found when you type them"></div>
+  <div class="hint">Appears in ${sds.length} seed${sds.length===1?'':'s'}:</div><div class="chips">${sds.map(s=>`<span class="chip" data-act="open" data-k="seeds" data-id="${s.id}">${esc(seedLabel(s))}</span>`).join('')||'<span class="hint">none yet</span>'}</div>
+  ${(c.mentions&&c.mentions.length)?`<div class="sec"><h3>Where it appears in your seeds</h3>${c.mentions.map(m=>{const sd=seedById(m.seed);return `<div class="prod"><span class="qq">“${esc(m.text)}”</span> <a class="from" ${sd?`data-act="open" data-k="seeds" data-id="${sd.id}"`:''}>from: ${sd?esc(seedLabel(sd)):'no seed'}</a></div>`}).join('')}</div>`:''}${bar}${body}</div>`;
+}
+
+/* ---- piece view ---- */
+function stepsHTML(p){return ORDER.map(k=>`<span class="step ${k===p.phase?'cur':ORDER.indexOf(k)<ORDER.indexOf(p.phase)?'past':''}">${PHASES[k].short}</span>`).join('<i>›</i>')}
+function outsHTML(p){const PH=PHASES[p.phase];const o=PH.outcomes?Object.entries(PH.outcomes).map(([k,v])=>`<button class="${k==='complete'?'pri':''}" data-act="outcome" data-pid="${p.id}" data-o="${k}">${v}${k==='continue'?'':' → '+PHASES[NEXT[p.phase][k]].short}</button>`).join(''):'';
+  const d=p.phase==='done'?`<button class="pri" data-act="publish" data-pid="${p.id}">Mark published</button><button data-act="backplay" data-pid="${p.id}">Send back to Play</button>`:'';return o+d}
+function stuckHTML(p){return p.phase==='play'?`<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">When stuck</summary><ul class="stuck">${STUCK.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="hint">Change the narrator only after every technique has failed. It should be rare; friction is what keeps the writing from going bland.</p></details>`:''}
+function refreshPhaseUI(p){const PH=PHASES[p.phase];const a=$('#steps');if(a)a.innerHTML=stepsHTML(p);const h=$('#phH');if(h)h.textContent=PH.label;const sb=$('#phSub');if(sb)sb.textContent=PH.details;const o=$('#outs');if(o)o.innerHTML=outsHTML(p);const k=$('#stuckBox');if(k)k.innerHTML=stuckHTML(p);renderLeft()}
+function pieceView(p){
+  const sOpts=db.seeds.filter(s=>!p.seeds.includes(s.id)).map(s=>`<option value="${s.id}">${esc(seedLabel(s))}</option>`).join('');
+  const cOpts=db.cards.filter(c=>!p.cards.includes(c.id)).map(c=>`<option value="${c.id}">${CARD_TYPES[c.type].icon} ${esc(c.name)}</option>`).join('');
+  const seeds=p.seeds.map(seedById).filter(Boolean),cards=p.cards.map(cardById).filter(Boolean);
+  const sheet=`<div class="sheet">`+seeds.map(s=>{
+    const dig=DIG.map((q,i)=>(s.dig&&s.dig[i])?`<h4>${esc(q)}</h4><div style="white-space:pre-wrap">${esc(s.dig[i])}</div>`:'').join('');
+    return `<h2>🌱 ${esc(seedName(s))} <small style="font-weight:400;color:var(--mute)">Seed</small></h2><div style="white-space:pre-wrap;font-family:Georgia,serif;font-size:15px;line-height:1.6">${esc(s.text||'')}</div>${s.why?`<h4>Why did this catch me?</h4><div>${esc(s.why)}</div>`:''}${s.later?`<h4>For later</h4><div>${esc(s.later)}</div>`:''}${dig}`}).join('')
+   +cards.map(c=>{const def=CARD_TYPES[c.type];const gs=[...def.groups,...COMMON];
+    const rows=gs.map((g,gi)=>g.qs.map((q,qi)=>{const id=(gi<def.groups.length?c.type:'common')+'.'+gi+'.'+qi;const as=live(c).filter(a=>a.q===id);return as.length?`<h4>${esc(q)}</h4>`+as.map(a=>{const sd=a.seed?seedById(a.seed):null;return `<div style="white-space:pre-wrap">${esc(a.text)} <span class="meta" style="display:inline">${a.ev?`<span class="ev ${a.ev}">${a.ev}</span> · `:''}${sd?esc(seedLabel(sd)):'no seed'}</span></div>`}).join(''):''}).join('')).join('');
+    const ms=(c.mentions||[]).map(m=>`<div class="hint">“${esc(m.text)}” — ${m.seed&&seedById(m.seed)?esc(seedLabel(seedById(m.seed))):'no seed'}</div>`).join('');
+    return `<h2>${def.icon} ${esc(c.name)} <small style="font-weight:400;color:var(--mute)">${def.label}</small></h2>${ms}${rows||'<div class="hint">No answers yet.</div>'}`}).join('')+`</div>`;
+  const PH=PHASES[p.phase],w=wcount(p),td=todayStats(p),ru=restUntil(p),rest=resting(p),ro=p.phase==='close';
+  const lock=w<LOCK&&p.phase!=='done'?`<b id="pwc">${w.toLocaleString()}</b> / ${LOCK.toLocaleString()} words · <span id="plock">${(LOCK-w).toLocaleString()} to go before the lock lifts</span>`:`<b id="pwc">${w.toLocaleString()}</b> words · <span id="plock">past the ${LOCK.toLocaleString()}-word lock</span>`;
+  const personaOpts=`<option value="">Choose a persona…</option>`+Object.entries(PERSONAS).map(([k,v])=>`<option value="${k}" ${p.persona===k?'selected':''}>${v[0]}</option>`).join('');
+  const edHtml=(p.html&&p.html.trim())?p.html:textToHtml(p.text||'');
+  const B=(cmd,label,title,val)=>`<button type="button" class="tbb" data-act="fmt" data-cmd="${cmd}" ${val?`data-val="${val}"`:''} title="${title}" ${ro?'disabled':''}>${label}</button>`;
+  const al=(t,y)=>`<svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">${y.map((r,i)=>`<line x1="${r[0]}" y1="${2+i*3.3}" x2="${r[1]}" y2="${2+i*3.3}"/>`).join('')}</svg>`;
+  const tb=`<div class="tb" id="tb">${B('undo','↶','Undo (⌘Z)')}${B('redo','↷','Redo (⇧⌘Z)')}<span class="tsep"></span>
+   <select data-bind="fmtfont" title="Font for the whole piece (one font only)">${Object.entries(FONTS).map(([k,v])=>`<option value="${k}" ${db.prefs.font===k?'selected':''}>${v[0]}</option>`).join('')}</select>
+   <select data-bind="fmtblock" title="Paragraph style" ${ro?'disabled':''}><option value="p">Normal</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="blockquote">Quote</option></select>
+   <select data-bind="fmtsize" title="Text size (applies to the selection)" ${ro?'disabled':''}><option value="">Size</option><option value="2">Small</option><option value="3">Normal</option><option value="5">Large</option><option value="6">Larger</option><option value="7">Huge</option></select><span class="tsep"></span>
+   ${B('bold','<b>B</b>','Bold (⌘B)')}${B('italic','<i>I</i>','Italic (⌘I)')}${B('underline','<u>U</u>','Underline (⌘U)')}${B('strikeThrough','<s>Cross out</s>','Cross out text (⌘⇧X). Crossed-out words still count as written; deleted words do not.')}
+   <label class="tbb tcol" title="Text colour"><span style="border-bottom:3px solid var(--acc)">A</span><input type="color" data-bind="fmtcolor" value="#b4532a" ${ro?'disabled':''}></label>
+   <label class="tbb tcol" title="Highlight"><span style="background:#ffe08a;padding:0 3px">ab</span><input type="color" data-bind="fmtbg" value="#ffe08a" ${ro?'disabled':''}></label><span class="tsep"></span>
+   ${B('justifyLeft',al('l',[[1,15],[1,10],[1,15],[1,9]]),'Align left')}${B('justifyCenter',al('c',[[1,15],[4,12],[1,15],[5,11]]),'Centre')}${B('justifyRight',al('r',[[1,15],[6,15],[1,15],[7,15]]),'Align right')}${B('justifyFull',al('j',[[1,15],[1,15],[1,15],[1,15]]),'Justify')}<span class="tsep"></span>
+   ${B('insertUnorderedList','• List','Bulleted list')}${B('insertOrderedList','1. List','Numbered list')}${B('outdent','⇤','Decrease indent')}${B('indent','⇥','Increase indent')}<span class="tsep"></span>
+   ${B('link','Link','Add a link')}${B('unlink','Unlink','Remove link')}${B('insertHorizontalRule','―','Divider line')}${B('removeFormat','Clear','Clear formatting of the selection')}<span class="tsep"></span>
+   <select data-bind="fmtlh" title="Line spacing">${[['1.4','Tight'],['1.7','Normal'],['2','Roomy']].map(([v,l])=>`<option value="${v}" ${db.prefs.lh===v?'selected':''}>${l} spacing</option>`).join('')}</select>
+   <button type="button" class="tbb ${db.prefs.spell?'on':''}" data-act="togspell" title="Spellcheck on or off">Spellcheck</button><button type="button" class="tbb ${ui.pFocus?'on':''}" data-act="togfocus" title="Full-screen writing: only the editor">Focus</button><button type="button" class="tbb" data-act="hindi" title="Hindi typing help and Devanagari characters">हिं Hindi</button></div>`;
+  const pageHTML=`<div class="page"><div id="ptext" class="pedit" contenteditable="${ro?'false':'true'}" data-bind="piecehtml" data-ph="${ro?'Read only in the close read.':'Start writing…  English or हिन्दी'}" spellcheck="${db.prefs.spell}" style="line-height:${db.prefs.lh}">${edHtml}</div></div>`;
+  const writer=`${tb}${pageHTML}`;
+  if(ui.pFocus)return `<div class="fx"><div class="fxbar"><span class="fxt">${esc(p.title)}</span><span class="fxinfo"><b id="pwc">${w.toLocaleString()}</b> words</span><button data-act="togfocus">Exit focus (Esc)</button></div>${tb}<div class="fxscroll">${pageHTML}</div></div>`;
+  return `<div class="wrap" style="max-width:1300px"><div class="head"><span class="badge">📄 Piece</span><input class="title" data-bind="piecetitle" value="${esc(p.title)}">${p.status==='published'?'<span class="badge">Published</span>':''}<button class="ghost" data-act="delpiece" data-id="${p.id}">Delete</button></div>
+  <div class="phasebar"><span id="steps">${stepsHTML(p)}</span><span class="sp"></span><span class="lockline">${lock}</span></div>
+  ${rest?`<div class="banner">Resting until ${fmtD(ru)}. Leave it alone and come back to read it with fresh eyes.</div>`:''}
+  ${p.note?`<div class="banner note"><b>Note for next time:</b> ${esc(p.note)}</div>`:''}
+  <div class="two2 ${ui.pFocus?'focus':''}"><div>
+    <div class="sec"><h3 id="phH">${esc(PH.label)}</h3><p class="sub" id="phSub">${esc(PH.details)}</p>
+     ${writer}
+     <div class="counter"><span><b id="ptdw">${td.words.toLocaleString()}</b> words today in this piece · <b id="ptdm">${mins(td.secs)}</b> min</span><span class="hint" style="margin:0">Counted automatically</span></div>
+     <div class="row" style="margin-top:8px"><button class="sm" data-act="draftdoc" data-id="${p.id}">Download .doc (Word, Pages)</button><button class="sm" data-act="drafttxt" data-id="${p.id}">Download .txt</button><button class="sm" data-act="draftpdf" data-id="${p.id}">Print / save as PDF</button></div>
+     ${p.phase==='close'||p.phase==='edit'?`<div class="q" style="margin-top:12px"><label>Marks: where does it fail?</label><textarea data-bind="piecemarks" placeholder="Note the places that fail. Don't fix them yet.">${esc(p.marks||'')}</textarea></div>`:''}
+     <div id="stuckBox">${stuckHTML(p)}</div>
+    </div>
+    <div class="sec"><h3>End this session</h3><p class="sub">How did it go? Your words and time are already recorded.</p>
+     <div class="q"><label>Note for next time (optional)</label><textarea data-bind="piecenote">${esc(p.note||'')}</textarea></div>
+     <div class="row" id="outs">${outsHTML(p)}</div></div>
+  </div><div>
+    <div class="sec"><h3>Brief</h3>
+     <div class="q"><label>Narrator persona</label><select data-bind="persona" style="width:100%">${personaOpts}</select>${p.persona?`<div class="hint">${esc(PERSONAS[p.persona][1])}</div>`:''}</div>
+     <div class="q"><label>Premise: what will the persona chase?</label><textarea data-bind="premise">${esc(p.premise||'')}</textarea></div>
+     <div class="q"><label>Hypothesis: why might it be good?</label><textarea data-bind="hyp">${esc(p.hyp||'')}</textarea></div></div>
+    <div class="sec"><h3>Material</h3><p class="sub">Pull seeds and cards into this piece. They stay linked to their sources and stay visible while you write.</p>
+     <div class="row"><select id="pS"><option value="">Add a seed…</option>${sOpts}</select><button data-act="pulls" data-id="${p.id}">Add</button></div>
+     <div class="row" style="margin-top:6px"><select id="pC"><option value="">Add a card…</option>${cOpts}</select><button data-act="pullc" data-id="${p.id}">Add</button></div>
+     <div class="chips">${seeds.map(s=>`<span class="chip" data-act="unpull" data-w="seeds" data-pid="${p.id}" data-id="${s.id}" title="Click to remove">${esc(seedLabel(s))} ✕</span>`).join('')}${cards.map(c=>`<span class="chip" data-act="unpull" data-w="cards" data-pid="${p.id}" data-id="${c.id}" title="Click to remove">${CARD_TYPES[c.type].icon} ${esc(c.name)} ✕</span>`).join('')}</div>
+     <div class="matscroll">${sheet}</div>
+     <div class="row" style="margin-top:8px"><button class="sm" data-act="sheetmd" data-id="${p.id}">Download material as text</button></div></div>
+  </div></div></div>`;
+}
+
+/* ---- progress view ---- */
+const dName=d=>d===TODAY()?'Today':d===add(TODAY(),-1)?'Yesterday':fmtD(d);
+function dayPanel(){
+  const d=ui.day||defaultDay(),S=dayStats(d);
+  const isDef=!ui.day;
+  const head=`<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="margin:0">${dName(d)} <small style="font-weight:400;color:var(--mute)">${fmtD(d)}${isDef&&d!==add(TODAY(),-1)?' · last day you worked':''}</small></h3><span class="row"><button class="sm" data-act="daymove" data-d="-1">◀ Earlier</button><button class="sm" data-act="daymove" data-d="y">Yesterday</button><button class="sm" data-act="daymove" data-d="1" ${d>=TODAY()?'disabled':''}>Later ▶</button></span></div>`;
+  if(!S.any)return `<div class="sec">${head}<div class="hint">Nothing was logged on this day.</div></div>`;
+  const pRows=S.pe.filter(e=>e.words>0||e.outcome).map(e=>{const pc=pieceById(e.piece||e.ref);return `<div class="prod"><span class="who">📄 ${esc(pc?pc.title:(e.title||'(deleted piece)'))}</span> <span class="qq">· ${PHASES[e.phase]?PHASES[e.phase].short:e.phase}</span><div>${e.words.toLocaleString()} words · ${mins(e.secs)} min${e.outcome?` · ended as <b>${esc((PHASES[e.phase].outcomes||{})[e.outcome]||e.outcome)}</b>`:''}${pc?` · now in ${PHASES[pc.phase].short}`:''}</div>${e.note?`<div class="hint">Note for next time: ${esc(e.note)}</div>`:''}</div>`}).join('')||'<div class="hint">No piece writing.</div>';
+  const sRows=S.se.filter(e=>e.words>0).map(e=>`<div class="prod"><span class="who">🌱 ${esc(seedById(e.ref)?seedName(seedById(e.ref)):(e.title||'seed'))}</span><div>${e.words.toLocaleString()} words · ${mins(e.secs)} min</div></div>`).join('');
+  const cRows=S.ce.filter(e=>e.words>0).map(e=>{const c=cardById(e.ref);return `<div class="prod"><span class="who">${c?CARD_TYPES[c.type].icon:'🗂'} ${esc(c?c.name:(e.title||'card'))}</span><div>${e.words.toLocaleString()} words · ${mins(e.secs)} min</div></div>`}).join('');
+  const chips=[['seed started','seeds started',S.seeds],['card created','cards created',S.cardsNew],['card reused','cards reused',S.reused],['answer written','answers written',S.answers],['quote marked','quotes marked',S.quotes],['item pulled into a piece','items pulled into pieces',S.pulls]].filter(x=>x[2]).map(x=>`<span class="chip">${x[2]} ${x[2]===1?x[0]:x[1]}</span>`).join('');
+  return `<div class="sec">${head}
+   <div class="two" style="gap:22px"><div><div class="eyebrow">Writing pieces</div><div class="big">${S.pw.toLocaleString()} <small>words · ${mins(S.ps)} min</small></div>${pRows}</div>
+   <div><div class="eyebrow">Prep (seeds and cards)</div><div class="big">${S.prepW.toLocaleString()} <small>words · ${mins(S.prepS)} min</small></div>${sRows}${cRows}${chips?`<div class="chips">${chips}</div>`:''}${(!sRows&&!cRows&&!chips)?'<div class="hint">No prep.</div>':''}</div></div></div>`;
+}
+function progressView(){
+  const pk=pick(),T=dayStats(TODAY()),Y=dayStats(add(TODAY(),-1)),st=streak(),pl=pipeline();
+  const days=[];for(let i=13;i>=0;i--)days.push(dayStats(add(TODAY(),-i)));
+  const mx=Math.max(1,...days.map(x=>x.pw+x.prepW));
+  const bars=days.map(x=>`<div class="bar" title="${fmtD(x.d)}: ${x.pw.toLocaleString()} piece words · ${x.prepW.toLocaleString()} prep words"><div class="bstack" style="height:${Math.round((x.pw+x.prepW)/mx*100)}%"><div class="bf2 prep" style="flex:${x.prepW}"></div><div class="bf2 piece ${x.d===TODAY()?'today':''}" style="flex:${x.pw}"></div></div><small>${P(x.d).getDate()}</small></div>`).join('');
+  const vs=(a,b)=>a===b?'same as yesterday':(a>b?`▲ ${(a-b).toLocaleString()} more than yesterday`:`▼ ${(b-a).toLocaleString()} fewer than yesterday`);
+  const pieces=db.pieces.map(p=>{const w=wcount(p),pct=Math.min(100,Math.round(w/LOCK*100)),r=resting(p),sess=new Set(db.log.filter(e=>e.piece===p.id&&e.words>0).map(e=>e.date)).size,last=db.log.filter(e=>e.piece===p.id).map(e=>e.date).sort().pop();
+    return `<tr data-act="open" data-k="pieces" data-id="${p.id}" style="cursor:pointer"><td><b>${esc(p.title)}</b>${p.status==='published'?' <span class="chip">published</span>':''}</td><td>${PHASES[p.phase].short}${r?' · resting to '+fmtD(restUntil(p)):''}</td><td>${w.toLocaleString()}</td><td style="width:160px"><div class="pbar"><div style="width:${pct}%"></div></div><small>${pct}% of ${LOCK.toLocaleString()}</small></td><td>${sess}</td><td>${last?fmtD(last):'—'}</td></tr>`}).join('');
+  const drows=days.filter(x=>x.any).reverse().map(x=>`<tr><td>${fmtD(x.d)}</td><td>${x.pw.toLocaleString()}</td><td>${x.prepW.toLocaleString()}</td><td>${mins(x.ps+x.prepS)} <small style="color:var(--mute)">(${mins(x.ps)} piece · ${mins(x.prepS)} prep)</small></td><td>${x.seeds}</td><td>${x.cardsNew}</td><td>${x.reused}</td><td>${x.answers}</td></tr>`).join('');
+  const rows=[...db.log].sort((a,b)=>b.date.localeCompare(a.date)||(b.secs-a.secs)).filter(e=>e.words>0||e.outcome).slice(0,60).map(e=>{const ar=e.area||'piece';let nm,kind;
+    if(ar==='piece'){const pc=pieceById(e.piece||e.ref);nm=pc?pc.title:(e.title||'(deleted piece)');kind='📄 '+(PHASES[e.phase]?PHASES[e.phase].short:'')}
+    else if(ar==='seed'){const sd=seedById(e.ref);nm=sd?seedName(sd):(e.title||'seed');kind='🌱 Seed'}
+    else{const c=cardById(e.ref);nm=c?c.name:(e.title||'card');kind=(c?CARD_TYPES[c.type].icon:'🗂')+' Card'}
+    return `<tr><td>${fmtD(e.date)}</td><td>${esc(nm)}</td><td>${kind}</td><td>${e.words.toLocaleString()}</td><td>${mins(e.secs)}</td><td>${e.outcome?esc(((PHASES[e.phase]||{}).outcomes||{})[e.outcome]||e.outcome):''}</td><td>${esc(e.note||'')}</td></tr>`}).join('');
+  const todayBox=`<div class="sec pickbox"><div class="eyebrow">What to work on</div>${pk.piece?`<h2>${esc(pk.piece.title)} <small>${PHASES[pk.piece.phase].label}</small></h2><p>${esc(pk.why)}</p><button class="pri" data-act="open" data-k="pieces" data-id="${pk.piece.id}">Open piece</button>`:pk.rest?`<h2>Rest today</h2><p>${esc(pk.why)}</p><button data-act="open" data-k="pieces" data-id="${pk.rest.id}">Open “${esc(pk.rest.title)}”</button>`:`<h2>${pk.start?'Start a new piece':'Nothing yet'}</h2><p>${esc(pk.why)}</p>${pk.start?'<button class="pri" data-act="tab" data-t="pieces">Go to Pieces</button>':''}`}</div>`;
+  const pipe=`<div class="sec"><h3>Prep pipeline</h3><p class="sub">Where your research stands right now.</p><div class="stats" style="margin:0">
+    <div class="stat"><b>${pl.seedsWaiting}</b><span>seeds not yet turned into cards (of ${pl.seeds})</span></div>
+    <div class="stat"><b>${pl.cover}%</b><span>of card questions answered (${pl.ans} of ${pl.tot})</span></div>
+    <div class="stat"><b>${pl.emptyCards}</b><span>cards with no answers (of ${pl.cards})</span></div>
+    <div class="stat"><b>${pl.reusedCards}</b><span>cards used by 2+ seeds</span></div>
+    <div class="stat"><b>${pl.used}</b><span>cards feeding a piece</span></div></div></div>`;
+  return `<div class="wrap"><div class="head"><span class="badge">📈 Progress</span><h2 style="margin:0;font-family:Georgia,serif">Your work, tracked automatically</h2></div>
+  <div class="stats"><div class="stat"><b>${T.pw.toLocaleString()}</b><span>piece words today</span><small>${vs(T.pw,Y.pw)}</small></div><div class="stat"><b>${T.prepW.toLocaleString()}</b><span>prep words today</span><small>${vs(T.prepW,Y.prepW)}</small></div><div class="stat"><b>${mins(T.ps+T.prepS)}</b><span>minutes today</span><small>${mins(T.ps)} piece · ${mins(T.prepS)} prep</small></div><div class="stat"><b>${st}</b><span>day streak (any work)</span></div></div>
+  ${todayBox}
+  ${dayPanel()}
+  <div class="sec"><div class="row" style="justify-content:space-between"><h3>Last 14 days</h3><span class="legend"><i class="lg piece"></i> piece words <i class="lg prep"></i> prep words</span></div><div class="bars">${bars}</div></div>
+  ${pipe}
+  <div class="sec"><h3>Day by day</h3>${drows?`<table><tr><th>Date</th><th>Piece words</th><th>Prep words</th><th>Time (min)</th><th>Seeds</th><th>Cards new</th><th>Cards reused</th><th>Answers</th></tr>${drows}</table>`:'<div class="hint">Nothing logged yet.</div>'}</div>
+  <div class="sec"><h3>Pieces</h3>${pieces?`<table><tr><th>Piece</th><th>Phase</th><th>Words</th><th>Toward ${LOCK.toLocaleString()}</th><th>Days written</th><th>Last</th></tr>${pieces}</table>`:'<div class="hint">No pieces yet.</div>'}</div>
+  <div class="sec"><h3>Session log</h3>${rows?`<table><tr><th>Date</th><th>Item</th><th>Kind</th><th>Words</th><th>Min</th><th>Ended as</th><th>Note</th></tr>${rows}</table>`:'<div class="hint">Nothing logged yet. Write a seed, answer a card question or write in a piece and it will appear here.</div>'}</div></div>`;
+}
+
+/* ================= ACTIONS ================= */
+function hint(){
+  const t=$('#dType'),n=$('#dName'),dl=$('#dl'),h=$('#dHint');if(!t||!n)return;if(!t.value){dl.innerHTML='';h.textContent='';h.className='hint';return}
+  dl.innerHTML=db.cards.filter(c=>c.type===t.value).flatMap(c=>[c.name,...(c.aliases||[])]).map(x=>`<option value="${esc(x)}">`).join('');
+  const v=n.value.trim();
+  if(!v){h.textContent='';h.className='hint';return}
+  const ex=findCard(t.value,v);
+  h.className='hint '+(ex?'ex':'');
+  h.textContent=ex?`✓ Existing card “${ex.name}” — you will add to it (${ex.answers.length} answers so far).`:'New card will be created.';
+}
+function toMd(p){
+  const out=['# '+p.title,''];
+  p.seeds.map(seedById).filter(Boolean).forEach(s=>{out.push('## Seed: '+seedName(s),'',s.text||'','');if(s.why)out.push('**Why did this catch me?**',s.why,'');if(s.later)out.push('**For later**',s.later,'');DIG.forEach((q,i)=>{if(s.dig&&s.dig[i])out.push('**'+q+'**',s.dig[i],'')})});
+  p.cards.map(cardById).filter(Boolean).forEach(c=>{const def=CARD_TYPES[c.type];out.push('## '+def.label+': '+c.name);(c.mentions||[]).forEach(m=>out.push('> “'+m.text+'”'));out.push('');[...def.groups,...COMMON].forEach((g,gi)=>g.qs.forEach((q,qi)=>{const id=(gi<def.groups.length?c.type:'common')+'.'+gi+'.'+qi;const as=live(c).filter(a=>a.q===id);if(as.length){out.push('**'+q+'**');as.forEach(a=>{const sd=a.seed?seedById(a.seed):null;out.push('- '+a.text+' ('+(a.ev?a.ev+'; ':'')+'from: '+(sd?seedName(sd):'no seed')+')')});out.push('')}}))});
+  return out.join('\n');
+}
+const ACT={
+ tab(el){ui.tab=el.dataset.t;ui.sel=null;ui.pFocus=false;if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});render()},
+ open(el){ui.pFocus=false;ui.tab=el.dataset.k;ui.sel={k:el.dataset.k,id:el.dataset.id};ui.from=el.dataset.k==='seeds'?el.dataset.id:null;ui.adding=null;ui.excerpt='';ui.newCard=false;render()},
+ opencard(el){ui.tab='cards';ui.sel={k:'cards',id:el.dataset.id};ui.from=el.dataset.from||null;ui.adding=null;render();window.scrollTo(0,0);$('#main').scrollTop=0},
+  newseed(){const sd={id:uid(),title:'',text:'',why:'',later:'',dig:{},cards:[]};db.seeds.unshift(sd);evt('seed_new',sd.id,'Seed');save();ui.tab='seeds';ui.sel={k:'seeds',id:sd.id};ui.from=sd.id;ui.excerpt='';render();const t=$('#seedtext');if(t)t.focus()},
+ async newcard(){const t=$('#nct').value;if(!t){toast('Choose a card type first');return}const n=await ask({title:'Name this '+CARD_TYPES[t].label.toLowerCase(),input:true,ok:'Create',placeholder:'Name'});if(!n)return;let c=findCard(t,n);if(c)toast('That card already exists — opened it');else{c={id:uid(),type:t,name:n.trim(),aliases:[],answers:[],mentions:[]};db.cards.push(c);evt('card_new',c.id,c.name);save()}ui.sel={k:'cards',id:c.id};ui.from=null;render()},
+ async newpiece(){const L=locked();if(L&&!(await ask({title:'Start another piece?',message:'You are still on “'+L.title+'” ('+wcount(L).toLocaleString()+' of '+LOCK.toLocaleString()+' words).',ok:'Start another'})))return;const t=await ask({title:'Name this piece',input:true,ok:'Create',placeholder:'Working title'});if(!t)return;const p={id:uid(),title:t.trim(),seeds:[],cards:[],text:'',html:'',phase:'prepare',status:'active',phaseSince:TODAY(),marks:'',note:'',persona:'',premise:'',hyp:''};db.pieces.unshift(p);save();ui.tab='pieces';ui.sel={k:'pieces',id:p.id};render();const t2=$('#ptext');if(t2)t2.focus()},
+ daymove(el){const cur=ui.day||defaultDay();let n=el.dataset.d==='y'?defaultDay():add(cur,+el.dataset.d);if(diff(n,TODAY())>0)n=TODAY();ui.day=n;render()},
+ outcome(el){const p=pieceById(el.dataset.pid),k=el.dataset.o;const e=getLog(p);e.outcome=k;e.note=p.note||'';let nx=p.phase;if(k!=='continue'&&NEXT[p.phase]&&NEXT[p.phase][k])nx=NEXT[p.phase][k];const moved=nx!==p.phase;p.phase=nx;if(moved){p.phaseSince=TODAY();if(nx==='close')p.restFrom=TODAY()}save();render();toast(moved?'Moved to: '+PHASES[nx].label:'Session saved. Continue next time.')},
+ publish(el){const p=pieceById(el.dataset.pid);p.status='published';save();render();toast('Marked published')},
+ backplay(el){const p=pieceById(el.dataset.pid);p.phase='play';p.phaseSince=TODAY();save();render()},
+ fmt(el){const ed=$('#ptext');if(!ed||ed.contentEditable==='false')return;const c=el.dataset.cmd;
+   if(c==='link'){ask({title:'Add a link',input:true,ok:'Add link',placeholder:'https://…'}).then(u=>{if(!u)return;restoreSel();document.execCommand('createLink',false,/^(https?:|mailto:)/i.test(u)?u:'https://'+u);syncEd()});return}
+   ed.focus();document.execCommand('styleWithCSS',false,true);document.execCommand(c,false,el.dataset.val||null);syncEd();updateTb()},
+ hindi(){const o=$('#hindi');if(o){o.remove();return}document.body.insertAdjacentHTML('beforeend',hindiPanel())},
+ hch(el){const ch=el.dataset.ch;const t=lastEd&&document.contains(lastEd)?lastEd:null;if(!t){toast('Click inside a text box first');return}
+   if(t.isContentEditable){if(t.contentEditable==='false'){toast('This text is read-only right now');return}restoreSel();document.execCommand('insertText',false,ch)}
+   else{t.focus();const a=t.selectionStart,b=t.selectionEnd;t.setRangeText(ch,a,b,'end');t.dispatchEvent(new Event('input',{bubbles:true}))}},
+ togspell(){db.prefs.spell=!db.prefs.spell;save();const ed=$('#ptext');if(ed)ed.spellcheck=db.prefs.spell;document.querySelector('[data-act=togspell]').classList.toggle('on',db.prefs.spell)},
+ togfocus(){ui.pFocus=!ui.pFocus;try{if(ui.pFocus){if(!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{})}else if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}render();const ed=$('#ptext');if(ed&&ed.contentEditable==='true'){ed.focus();const r=document.createRange();r.selectNodeContents(ed);r.collapse(false);const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}},
+ draftdoc(el){const p=pieceById(el.dataset.id);const html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>'+esc(p.title)+'</title><style>body{font-family:'+fontStack().replace(/"/g,"'")+';font-size:12pt;line-height:1.5}h1,h2,h3{font-weight:bold}blockquote{margin-left:24px;color:#555}</style></head><body><h1>'+esc(p.title)+'</h1>'+(p.html||textToHtml(p.text))+'</body></html>';dl((p.title||'piece').replace(/[^\w\- \u0900-\u097F]+/g,'')+'.doc','application/msword',html)},
+ drafttxt(el){const p=pieceById(el.dataset.id);dl((p.title||'piece').replace(/[^\w\- \u0900-\u097F]+/g,'')+'.txt','text/plain',p.title+'\n\n'+(p.text||'')+'\n')},
+ draftpdf(el){const p=pieceById(el.dataset.id);$('#printArea').innerHTML='<h1>'+esc(p.title)+'</h1>'+(p.html||textToHtml(p.text));setTimeout(()=>window.print(),60)},
+ decon(el){const s=seedById(el.dataset.id),t=$('#dType').value,n=$('#dName').value.trim();if(!t){toast('Choose a card type first');return}if(!n){toast('Name the card first');return}
+   let c=findCard(t,n),isNew=false;if(c){toast('Added to existing card “'+c.name+'”')}else{c={id:uid(),type:t,name:n,aliases:[],answers:[],mentions:[]};db.cards.push(c);isNew=true;evt('card_new',c.id,c.name);toast('New card created')}
+   c.mentions=c.mentions||[];
+   if(ui.excerpt&&!c.mentions.some(m=>m.seed===s.id&&m.text===ui.excerpt)){c.mentions.push({id:uid(),seed:s.id,text:ui.excerpt});evt('quote',c.id,c.name)}
+   const linked=attach(s,c);if(linked&&!isNew)evt('card_reused',c.id,c.name);ui.excerpt='';ui.newCard=false;save();ui.tab='seeds';ui.sel={k:'seeds',id:s.id};ui.from=s.id;render()},
+ newcardform(){ui.newCard=true;render();const n=$('#dName');if(n)n.focus()},
+ cancelnew(){ui.newCard=false;render()},
+ pullcard(el){const sd=seedById(el.dataset.from),c=cardById(el.dataset.id);if(attach(sd,c))evt('card_reused',c.id,c.name);save();toast('Added to this seed');ACT.opencard(el)},
+ clearsel(){ui.excerpt='';const b=$('#selBox');if(b)b.innerHTML='<span class="hint">Tip: select words in your seed first and they will be linked to this card.</span>'},
+ adding(el){ui.adding=el.dataset.key;render()},
+ cancel(){ui.adding=null;render()},
+ addans(el){const key=el.dataset.cid+':'+el.dataset.q;const text=(ui.draft[key]||'').trim();if(!text){toast('Write an answer first');return}
+   const c=cardById(el.dataset.cid);const seed=ui.from&&seedById(ui.from)?ui.from:null;
+   c.answers.push({id:uid(),q:el.dataset.q,text,seed,ev:ui.ev[key]||'observed'});
+   if(seed)attach(seedById(seed),c);
+   delete ui.draft[key];delete ui.ev[key];ui.adding=null;save();render();toast(seed?'Linked to “'+seedById(seed).title+'”':'Added (no seed linked)')},
+ delans(el){for(const c of db.cards)c.answers=c.answers.filter(a=>a.id!==el.dataset.aid);save();render()},
+ async delseed(el){if(!(await ask({title:'Delete this seed?',message:'Answers it produced stay on their cards, marked “no seed”.',ok:'Delete'})))return;const id=el.dataset.id;db.seeds=db.seeds.filter(s=>s.id!==id);db.cards.forEach(c=>{c.answers.forEach(a=>{if(a.seed===id)a.seed=null});c.mentions=(c.mentions||[]).filter(m=>m.seed!==id)});db.pieces.forEach(p=>p.seeds=p.seeds.filter(x=>x!==id));ui.sel=null;ui.from=null;save();render()},
+ async delcard(el){if(!(await ask({title:'Delete this card?',message:'All its answers will be deleted too.',ok:'Delete'})))return;const id=el.dataset.id;db.cards=db.cards.filter(c=>c.id!==id);db.seeds.forEach(s=>s.cards=s.cards.filter(x=>x!==id));db.pieces.forEach(p=>p.cards=p.cards.filter(x=>x!==id));ui.sel=null;save();render()},
+ async delpiece(el){if(!(await ask({title:'Delete this piece?',message:'Your seeds and cards are kept.',ok:'Delete'})))return;db.pieces=db.pieces.filter(p=>p.id!==el.dataset.id);ui.sel=null;save();render()},
+ pulls(el){const v=$('#pS').value;if(!v)return;pieceById(el.dataset.id).seeds.push(v);evt('pull',v,'seed');save();render()},
+ pullc(el){const v=$('#pC').value;if(!v)return;pieceById(el.dataset.id).cards.push(v);evt('pull',v,'card');save();render()},
+ unpull(el){const p=pieceById(el.dataset.pid);p[el.dataset.w]=p[el.dataset.w].filter(x=>x!==el.dataset.id);save();render()},
+ sheetmd(el){const p=pieceById(el.dataset.id);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([toMd(p)],{type:'text/markdown'}));a.download=(p.title||'piece').replace(/[^\w\- ]+/g,'')+'-prep.md';document.body.appendChild(a);a.click();a.remove()},
+ folder(){chooseFolder()},reconnect(){reconnect()},async syncnow(){setSt('saving');await syncNow(false);if(stMsg==='ok')toast('Synced with the folder.')},
+ export(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,1)],{type:'application/json'}));a.download='prepare-backup.json';document.body.appendChild(a);a.click();a.remove()},
+ async sample(){if(!(await ask({title:'Load the sample?',message:'This replaces everything you have now. If a folder is connected, its seeds are cleared too.',ok:'Replace'})))return;db=sampleDB();norm();save();ui.sel={k:'seeds',id:db.seeds[0].id};ui.from=ui.sel.id;ui.tab='seeds';render()},
+ async blank(){if(!(await ask({title:'Erase everything?',message:'This cannot be undone. Export a backup first if unsure. If a folder is connected, its seeds are cleared too.',ok:'Erase'})))return;db=blankDB();norm();save();ui.sel=null;ui.from=null;render()}
+};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;if(el.tagName==='A'&&!el.dataset.act)return;const f=ACT[el.dataset.act];if(f){e.preventDefault();f(el,e)}});
+function input(){}
+document.addEventListener('input',e=>{const t=e.target,b=t.dataset&&t.dataset.bind;
+  if(t.id==='filter'){ui.filter=t.value;renderLeft();return}
+  if(t.id==='libf'){const q=t.value.toLowerCase();document.querySelectorAll('#libgrid .icard').forEach(e=>e.style.display=e.dataset.hay.includes(q)?'':'none');return}
+  if(t.id==='dName'){t.dataset.auto='';hint();return}if(t.id==='dType'){hint();return}
+  if(!b)return;
+  if(b==='seedtext'){const sd=seedById(ui.sel.id);const ow=words(sd.text);sd.text=t.value;const dw=words(sd.text)-ow;if(dw||true)trackAdd('seed',sd.id,seedName(sd),'',dw);save();renderLeft()}
+  else if(b==='seedwhy'){seedById(ui.sel.id).why=t.value;save()}
+  else if(b==='seedlater'){seedById(ui.sel.id).later=t.value;save()}
+  else if(b==='seeddig'){const sd=seedById(ui.sel.id);sd.dig=sd.dig||{};sd.dig[t.dataset.i]=t.value;t.closest('.q').classList.toggle('done',!!t.value.trim());save()}
+  else if(b==='seedtitle'){seedById(ui.sel.id).title=t.value;save();renderLeft()}
+  else if(b==='cardname'){cardById(ui.sel.id).name=t.value;save();renderLeft()}
+  else if(b==='cardalias'){cardById(ui.sel.id).aliases=t.value.split(',').map(x=>x.trim()).filter(Boolean);save()}
+  else if(b==='piecetitle'){pieceById(ui.sel.id).title=t.value;save();renderLeft()}
+  else if(b==='piecehtml'){const p=pieceById(ui.sel.id);const ow=wcount(p);
+    if(!t.textContent.trim()&&/^(<br>|<p><br><\/p>|<div><br><\/div>)?$/.test(t.innerHTML))t.innerHTML='';
+    p.html=t.innerHTML;p.text=htmlToText(p.html);const nw=wcount(p);
+    if(p.phase==='prepare'&&nw>ow&&!trk.pasted){p.phase='play';p.phaseSince=TODAY();refreshPhaseUI(p);toast('You have started writing, so this piece is now in Play.')}
+    if(trk.pasted){trk.pasted=false;trackAdd('piece',p.id,p.title,p.phase,0)}else trackWrite(p,nw-ow);
+    const $w=$('#pwc');if($w)$w.textContent=nw.toLocaleString();const $l=$('#plock');if($l)$l.textContent=nw<LOCK&&p.phase!=='done'?(LOCK-nw).toLocaleString()+' to go before the lock lifts':'past the '+LOCK.toLocaleString()+'-word lock';
+    const tdy=todayStats(p);const a1=$('#ptdw');if(a1)a1.textContent=tdy.words.toLocaleString();const a2=$('#ptdm');if(a2)a2.textContent=mins(tdy.secs);
+    save();clearTimeout(input.h);input.h=setTimeout(renderLeft,600)}
+  else if(b==='fmtcolor'){restoreSel();document.execCommand('styleWithCSS',false,true);document.execCommand('foreColor',false,t.value);syncEd()}
+  else if(b==='fmtbg'){restoreSel();document.execCommand('styleWithCSS',false,true);document.execCommand('hiliteColor',false,t.value);syncEd()}
+  else if(b==='piecemarks'){pieceById(ui.sel.id).marks=t.value;save()}
+  else if(b==='piecenote'){pieceById(ui.sel.id).note=t.value;save()}
+  else if(b==='premise'){pieceById(ui.sel.id).premise=t.value;save()}
+  else if(b==='hyp'){pieceById(ui.sel.id).hyp=t.value;save()}
+  else if(b==='ans'){for(const c of db.cards)for(const a of c.answers)if(a.id===t.dataset.aid){const ow=words(a.text);a.text=t.value;trackAdd('card',c.id,c.name,'',words(a.text)-ow)}save()}
+  else if(b==='newans'){const w=t.closest('.answ'),q=t.closest('.q');if(!t.value.trim())return;
+    const c=cardById(q.dataset.cid);const seed=ui.from&&seedById(ui.from)?ui.from:null;
+    const a={id:uid(),q:q.dataset.qid,text:t.value,seed,ev:''};c.answers.push(a);evt('answer',c.id,c.name);trackAdd('card',c.id,c.name,'',words(t.value));if(seed)attach(seedById(seed),c);
+    t.dataset.bind='ans';t.dataset.aid=a.id;w.classList.remove('new');w.dataset.aid=a.id;t.removeAttribute('placeholder');
+    w.insertAdjacentHTML('beforeend',metaHTML(a));w.insertAdjacentHTML('afterend',newBoxHTML());q.classList.add('done');save()}
+});
+document.addEventListener('change',e=>{const t=e.target,b=t.dataset&&t.dataset.bind;if(t.id==='dType'){hint();return}if(!b)return;
+  if(b==='from'){ui.from=t.value||null;render()}
+  else if(b==='ev'){for(const c of db.cards)for(const a of c.answers)if(a.id===t.dataset.aid)a.ev=t.value;save();t.className='ev '+(t.value||'none')}
+  else if(b==='draftev'){ui.ev[t.dataset.key]=t.value}
+  else if(b==='fmtblock'){restoreSel();document.execCommand('formatBlock',false,t.value==='p'?'<p>':'<'+t.value+'>');syncEd();updateTb()}
+  else if(b==='fmtsize'){if(!t.value)return;restoreSel();document.execCommand('styleWithCSS',false,true);document.execCommand('fontSize',false,t.value);t.value='';syncEd()}
+  else if(b==='fmtfont'){db.prefs.font=t.value;save();applyFont()}
+  else if(b==='lang'){db.prefs.lang=t.value;save();applyLang()}
+  else if(b==='fmtlh'){db.prefs.lh=t.value;save();const ed=$('#ptext');if(ed)ed.style.lineHeight=t.value}
+  else if(b==='persona'){pieceById(ui.sel.id).persona=t.value;save();render()}
+});
+/* ---- Hindi help ---- */
+let lastEd=null;
+document.addEventListener('focusin',e=>{const t=e.target;if(!t||!t.matches||t.closest('.hpop'))return;if(t.matches('textarea,input[type=text],input:not([type]),[contenteditable=true]'))lastEd=t});
+document.addEventListener('mousedown',e=>{if(e.target.closest('.hpop [data-ch]'))e.preventDefault()});
+const HCHARS=[['Marks',['।','॥','़','ं','ँ','ः','्','ॐ','ऽ']],['Vowels',['अ','आ','इ','ई','उ','ऊ','ऋ','ए','ऐ','ओ','औ','ऑ']],['Vowel signs',['ा','ि','ी','ु','ू','ृ','े','ै','ो','ौ','ॉ']],['Special letters',['क़','ख़','ग़','ज़','ड़','ढ़','फ़','ऩ','ज्ञ','क्ष','त्र','श्र','द्य']],['Numbers',['०','१','२','३','४','५','६','७','८','९']]];
+function hindiPanel(){return `<div class="hpop" id="hindi"><div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:15px">हिन्दी · Hindi</b><button class="ghost sm" data-act="hindi">✕ Close</button></div>
+ <h4>Type Hindi on your Mac (works offline)</h4>
+ <ol><li>Open <b>System Settings → Keyboard → Text Input → Input Sources → Edit…</b>, press <b>＋</b>, choose <b>Hindi</b> and add <b>Hindi – Transliteration</b>. You type “namaste” and get नमस्ते, with suggestions. <i>Hindi – Inscript</i> and <i>Devanagari QWERTY</i> are also available. (Menu names can differ slightly between macOS versions.)</li>
+ <li>Switch between English and Hindi with the 🌐 <b>Globe</b> key or <b>Control + Space</b>, or from the keyboard icon in the menu bar.</li>
+ <li>Then just type in any box here. English and Hindi can sit in the same line.</li></ol>
+ <h4>Insert a character</h4><p class="hint" style="margin:0 0 6px">Click inside a box first, then tap a character.</p>
+ ${HCHARS.map(([h,cs])=>`<div class="hint" style="margin:8px 0 3px">${h}</div><div class="hgrid">${cs.map(c=>`<button data-act="hch" data-ch="${c}">${c}</button>`).join('')}</div>`).join('')}
+ <h4>Spellcheck language</h4><select data-bind="lang" style="width:100%"><option value="">Automatic</option><option value="en-IN" ${db.prefs.lang==='en-IN'?'selected':''}>English</option><option value="hi" ${db.prefs.lang==='hi'?'selected':''}>हिन्दी (Hindi)</option></select>
+ <p class="hint">Spellcheck follows your Mac and browser dictionaries. If Hindi words are underlined, switch the Spellcheck button off in the toolbar.</p></div>`}
+let savedRange=null;
+function restoreSel(){const ed=$('#ptext');if(!ed)return;ed.focus();if(savedRange){const sel=getSelection();sel.removeAllRanges();sel.addRange(savedRange)}}
+function syncEd(){const ed=$('#ptext');if(ed)ed.dispatchEvent(new Event('input',{bubbles:true}))}
+function updateTb(){const tb=$('#tb');if(!tb)return;tb.querySelectorAll('[data-cmd]').forEach(b=>{const c=b.dataset.cmd;if(['bold','italic','underline','strikeThrough','insertUnorderedList','insertOrderedList','justifyLeft','justifyCenter','justifyRight','justifyFull'].includes(c)){let on=false;try{on=document.queryCommandState(c)}catch(e){}b.classList.toggle('on',on)}});
+  const sel=tb.querySelector('[data-bind=fmtblock]');if(sel){let v='p';try{v=(document.queryCommandValue('formatBlock')||'p').toLowerCase().replace(/[<>]/g,'')}catch(e){}sel.value=['h1','h2','h3','blockquote'].includes(v)?v:'p'}}
+document.addEventListener('selectionchange',()=>{const ed=$('#ptext'),sel=getSelection();if(ed&&sel.rangeCount&&ed.contains(sel.anchorNode)){savedRange=sel.getRangeAt(0).cloneRange();updateTb()}});
+document.addEventListener('mousedown',e=>{if(!e.target.closest('#tb'))return;const ed=$('#ptext'),sel=getSelection();if(ed&&sel.rangeCount&&ed.contains(sel.anchorNode))savedRange=sel.getRangeAt(0).cloneRange();if(e.target.closest('.tbb')&&!e.target.closest('input'))e.preventDefault()});
+document.addEventListener('paste',e=>{const ed=$('#ptext');if(!ed||!ed.contains(e.target)||ed.contentEditable==='false')return;e.preventDefault();
+  const h=e.clipboardData.getData('text/html'),t=e.clipboardData.getData('text/plain');trk.pasted=true;document.execCommand('insertHTML',false,h?cleanHTML(h):textToHtml(t))},true);
+try{document.execCommand('defaultParagraphSeparator',false,'p')}catch(e){}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&ui.pFocus){ui.pFocus=false;render()}});
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==='x'&&document.activeElement&&document.activeElement.id==='ptext'){e.preventDefault();document.execCommand('strikeThrough');updateTb();return}if(e.key==='Escape'&&ui.pFocus&&!$('#modal')){ui.pFocus=false;if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});render()}});
+function grabSel(e){const t=e.target;if(!t||t.id!=='seedtext')return;
+  const sel=t.value.slice(t.selectionStart,t.selectionEnd).replace(/\s+/g,' ').trim();
+  if(!sel)return;ui.excerpt=sel;
+  const b=$('#selBox');if(b)b.innerHTML='Linked to your words: “'+esc(sel)+'” <a class="from" data-act="clearsel">clear</a>';
+}
+['select','mouseup','keyup'].forEach(ev=>document.addEventListener(ev,grabSel,true));
+function afterRender(){const hp=$('#hpill');if(hp)hp.style.display=$('#ptext')?'none':'';applyLang()}
+function applyLang(){document.querySelectorAll('#ptext,#seedtext,.qcard textarea').forEach(el=>{if(db.prefs.lang)el.setAttribute('lang',db.prefs.lang);else el.removeAttribute('lang')})}
+window.__prep={get db(){return db},ui,render,connectHandle:h=>connect(h,true),syncNow:()=>syncNow(false),get st(){return stMsg}};
+render();initFolder();
+})();
+</script>
+<script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
+</body>
+</html>
