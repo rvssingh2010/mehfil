@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf9f6"><meta name="color-scheme" content="light">
-<link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
 <title>Mehfil seeds</title>
 <style>
 :root{color-scheme:light;--bg:#faf9f6;--card:#fff;--ink:#1f1d1a;--mute:#6f6a62;--line:#e4dfd6;--acc:#c4623a}
@@ -18,10 +18,10 @@ button.pri{background:var(--acc);border-color:var(--acc);color:#fff}button.ghost
 .st.ok{color:#2e6b3c}.st.warn{color:#9a4a1a}
 .list{padding:8px 16px 100px;display:flex;flex-direction:column;gap:10px}
 .item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.item .t{white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.item .t{font-size:var(--fs,22px);white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .item small{color:var(--mute);display:block;margin-top:6px;font-size:12px}
 .empty{color:var(--mute);padding:40px 16px;text-align:center}
-textarea{flex:1;width:100%;border:0;outline:0;resize:none;background:transparent;font:19px/1.6 inherit;font-family:inherit;padding:16px;color:var(--ink);min-height:60vh}
+textarea{flex:1;width:100%;border:0;outline:0;resize:none;background:transparent;font-size:var(--fs,22px);line-height:1.6;font-family:inherit;padding:16px;color:var(--ink);min-height:60vh}
 .bar{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--bg)}
 .bar .sp{flex:1}
 </style></head><body>
@@ -33,7 +33,7 @@ const KEY='mehfil-phone-v1';
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-S=S||{};S.seeds=S.seeds||[];S.tomb=S.tomb||{};S.base=S.base||{};S.files=S.files||{};S.folder=S.folder||null;S.seedsDir=S.seedsDir||null;S.last=S.last||0;
+S=S||{};S.seeds=S.seeds||[];S.tomb=S.tomb||{};S.base=S.base||{};S.files=S.files||{};S.folder=S.folder||null;S.seedsDir=S.seedsDir||null;S.last=S.last||0;S.fs=S.fs||22;document.documentElement.style.setProperty('--fs',S.fs+'px');
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const ui={open:null,msg:'',kind:''};
 const $=s=>document.querySelector(s);
@@ -45,7 +45,7 @@ const pending=()=>S.seeds.filter(x=>S.base[x.id]!==x.updated).length+Object.keys
 function render(){
   const app=$('#app');
   if(ui.open){const x=sd(ui.open);if(!x){ui.open=null;return render()}
-    app.innerHTML=`<header><button class="ghost" data-a="back">‹ Seeds</button><h1></h1><button class="ghost" data-a="del">Delete</button></header>
+    app.innerHTML=`<header><button class="ghost" data-a="back">‹ Seeds</button><h1></h1><button data-a="fsm" aria-label="Smaller text">A−</button><button data-a="fsp" aria-label="Larger text">A+</button><button class="ghost" data-a="del">Delete</button></header>
       <textarea id="ta" placeholder="Write the seed…" autocomplete="off" spellcheck="true">${esc(x.text)}</textarea>
       <div class="bar"><span class="sp"></span><button class="pri" data-a="back">Done</button></div>`;
     const ta=$('#ta');ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);return}
@@ -74,6 +74,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t
   else if(a==='open'){ui.open=t.dataset.id;render()}
   else if(a==='back'){const x=sd(ui.open);if(x&&!(x.text||'').trim()&&!S.base[x.id]){S.seeds=S.seeds.filter(y=>y!==x)}ui.open=null;save();render();if(tokenValid())sync(true)}
   else if(a==='del'){const x=sd(ui.open);if(x&&confirm('Delete this seed?')){S.seeds=S.seeds.filter(y=>y!==x);if(S.base[x.id]!==undefined||S.files[x.id])S.tomb[x.id]=Date.now();ui.open=null;save();render();if(tokenValid())sync(true)}}
+  else if(a==='fsm'||a==='fsp'){S.fs=Math.max(14,Math.min(44,S.fs+(a==='fsp'?2:-2)));document.documentElement.style.setProperty('--fs',S.fs+'px');save()}
   else if(a==='sync')sync(false)});
 
 /* ---------- Google sign-in + Drive ---------- */
