@@ -38,7 +38,7 @@ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const ui={open:null,msg:'',kind:''};
 const $=s=>document.querySelector(s);
 const sd=id=>S.seeds.find(x=>x.id===id);
-const sigOf=x=>JSON.stringify([x.title||'',x.text||'',x.why||'',x.later||'',x.dig||{}]);
+const sigOf=x=>JSON.stringify([x.title||'',x.text||'',x.why||'',x.later||'',x.dig||{},(x.hooks||[]).slice().sort()]);
 const pending=()=>S.seeds.filter(x=>S.base[x.id]!==x.updated).length+Object.keys(S.tomb).filter(id=>S.base[id]!==S.tomb[id]).length;
 
 /* ---------- screens ---------- */
@@ -112,7 +112,7 @@ async function upload(name,obj,fid){const body=JSON.stringify(obj);
   const r=await g(`${UP}?uploadType=multipart&fields=id,modifiedTime`,{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body:mp});return r.json()}
 function merge(f){const fu=f.updated||0,loc=sd(f.id);let ch=false;
   if(f.deleted){S.tomb[f.id]=Math.max(S.tomb[f.id]||0,fu);S.base[f.id]=fu;if(loc&&(loc.updated||0)<=fu){S.seeds=S.seeds.filter(x=>x!==loc);if(ui.open===f.id)ui.open=null;ch=true}return ch}
-  const inc={title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{}};
+  const inc={title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{},hooks:f.hooks||[]};
   if(!loc){if(S.tomb[f.id]&&S.tomb[f.id]>=fu)return false;S.seeds.unshift(Object.assign({id:f.id,updated:fu},inc));S.base[f.id]=fu;return true}
   if(fu>(loc.updated||0)){
     if(sigOf(loc)!==sigOf(inc)&&(loc.updated||0)>(S.base[f.id]||0)){S.seeds.unshift({id:uid(),title:'',text:(loc.text||'')+'\n\n(copy kept: edited on two devices)',why:'',later:'',dig:{},updated:Date.now()})}
@@ -129,7 +129,7 @@ async function sync(quiet){if(busy)return;busy=true;
       if(k&&k.fid===f.id&&k.mt===f.modifiedTime)continue;
       const j=await (await g(`${API}/files/${f.id}?alt=media`)).json();if(!j||!j.id)continue;
       if(merge(j))changed++;S.files[id]={fid:f.id,mt:f.modifiedTime}}
-    for(const x of S.seeds){if(S.base[x.id]!==x.updated){const r=await upload(x.id+'.json',{id:x.id,title:x.title||'',text:x.text,why:x.why||'',later:x.later||'',dig:x.dig||{},updated:x.updated},(S.files[x.id]||{}).fid);S.files[x.id]={fid:r.id,mt:r.modifiedTime};S.base[x.id]=x.updated}}
+    for(const x of S.seeds){if(S.base[x.id]!==x.updated){const r=await upload(x.id+'.json',{id:x.id,title:x.title||'',text:x.text,why:x.why||'',later:x.later||'',dig:x.dig||{},hooks:x.hooks||[],updated:x.updated},(S.files[x.id]||{}).fid);S.files[x.id]={fid:r.id,mt:r.modifiedTime};S.base[x.id]=x.updated}}
     for(const [id,t] of Object.entries(S.tomb)){if(S.base[id]!==t){const r=await upload(id+'.json',{id,deleted:true,updated:t},(S.files[id]||{}).fid);S.files[id]={fid:r.id,mt:r.modifiedTime};S.base[id]=t}}
     S.last=Date.now();save();ui.msg='';ui.kind='ok';
     if(ui.open&&changed&&document.activeElement&&document.activeElement.id==='ta'){/* leave the box alone while typing */}else render();
