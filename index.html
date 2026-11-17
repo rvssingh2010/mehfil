@@ -42,6 +42,7 @@ textarea{width:100%;resize:vertical;min-height:58px;line-height:1.5}
 .q.done>label::after{content:" ✓";color:var(--ok)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .chip{display:inline-flex;gap:5px;align-items:center;background:var(--sel);border-radius:14px;padding:3px 10px;cursor:pointer;font-size:12.5px}
+.chip.on{background:var(--acc);color:#fff}.master{margin:14px 0}.master .chip{border:0;font-family:inherit;padding:5px 12px;font-size:13.5px}
 .chip:hover{outline:1px solid var(--acc)}.chip b{font-weight:600}.chip i{font-style:normal;color:var(--mute);font-size:11px}
 .ans{border-left:3px solid var(--line);padding:4px 0 4px 10px;margin:8px 0}
 .ans p{margin:0 0 4px;white-space:pre-wrap;line-height:1.5}
@@ -192,8 +193,20 @@ idea:{label:'Idea',icon:'💡',groups:[
  {h:'Background',qs:['What is its history? Who first said it, who holds it now, and who disputes it?','What is the evidence, with numbers where they exist? Mark each source verified or claimed.','Who can I talk to or read: experts, and people living it?']},
  {h:'Me',qs:['What do I already believe about it, and why? (A check on my own bias.)','What am I still unsure of, or what do I not know yet?','If I had to show it in one scene without naming it, what happens?']}]},
 action:{label:'Action',icon:'🔁',groups:[{h:'The action',qs:['What is the action, in one literal sentence?','Step by step, in order, what happens?','Who does it, to whom or what, and who is watching?','Where and when does it usually happen?','What does the body do: hands, posture, pace, sounds?','What does it need: tools, skill, permission, money?','What are the rules or etiquette, spoken and unspoken?','What is the usual version, and what does a variation look like?','What goes wrong, and how do people deal with it?','What does it signal or mean to the people doing it?','Who taught it to them? Has it changed over time?']}]},
-phrase:{label:'Phrase or Line',icon:'💬',groups:[{h:'The line',qs:['The exact words, in the language spoken. How sure am I of the wording: exact, near or paraphrased?','Who said it, and to whom?','Where and when, and what was happening around it?','How was it said: tone, pace, volume, accent, pauses?','What did people do in response?','What does it literally mean, and what is it really doing (asking, deflecting, boasting)?','Is it habitual for this speaker? Does a group use it?','Which words are unusual, regional or borrowed?','Why does it stay with me?']}]}
+phrase:{label:'Words',icon:'💬',groups:[{h:'The line',qs:['The exact words, in the language spoken. How sure am I of the wording: exact, near or paraphrased?','Who said it, and to whom?','Where and when, and what was happening around it?','How was it said: tone, pace, volume, accent, pauses?','What did people do in response?','What does it literally mean, and what is it really doing (asking, deflecting, boasting)?','Is it habitual for this speaker? Does a group use it?','Which words are unusual, regional or borrowed?','Why does it stay with me?']}]},
+feeling:{label:'Feeling',icon:'💗',groups:[
+ {h:'The feeling',qs:['What were you feeling when you were witnessing the seed moment?','Name it as exactly as you can. Is it one feeling or a mix? Which came first?','How strong was it, and did it change while the moment went on?']},
+ {h:'In the body',qs:['Where did you feel it in your body? Heat, tightness, a drop, a lift, stillness?','What did you do or want to do because of it? Look away, laugh, stay quiet, leave?']},
+ {h:'Where it came from',qs:['What exactly set it off: a detail, a word, a look, a memory?','Does it remind you of an earlier time you felt this? What was that time?','Would someone else in the same moment have felt the same? What would they have felt?']},
+ {h:'Afterwards',qs:['Did the feeling stay, fade or turn into something else? When?','Without naming the feeling, what would a stranger see or hear that would make them feel it?']}]},
+whatif:{label:'What if',icon:'🔮',groups:[
+ {h:'The scenario',qs:['Flesh out the what-if scenario.','What is the one thing that changes from what really happened?','What would happen next, step by step, if it went that way?']},
+ {h:'Who and where',qs:['Who is affected, and how does each of them react?','Where and when would it play out? Does the setting change anything?']},
+ {h:'Pushing it',qs:['What is the best that could come of it? What is the worst?','What would be the most surprising outcome, and what is the most ordinary one?','What stays the same whatever changes?']},
+ {h:'Why it matters',qs:['What does this what-if reveal about the real moment?','Is there a real person, place or thing it could be a story about?']}]},
 };
+const NEW_TYPES=['person','place','action','phrase','feeling','whatif'];
+const HOOKS=[['person','People'],['place','Place'],['action','Action'],['phrase','Words'],['feeling','Feeling'],['whatif','What if idea']];
 const DIG=['When and where did it happen? Time of day, weather.','Who was there, and where was each person?','What happened, step by step, in order?','What happened just before, and just after?','What was said? Write the exact words you remember.','What did you do with your body: where you stood, what your hands were doing?','What did you feel physically at that moment (not what you feel about it now)?','What objects were involved?','Which moment do you replay most?','What don\'t you know about it? Who else was there, and what might they remember differently?','Who had the power in the room, and did it shift?','What exactly do you see: shape, colour, size, texture?','What\'s around it, the frame it sits in?','What light is it in?','What can you hear, smell or feel near it?','Is it still or moving? What changes if you keep watching?','What\'s the one detail most people would miss?','Have you seen it before? Does it recur?','Describe it in one literal sentence, with no comparison.','What made you stop and look?'];
 
 /* ================= YOUR PROCESS (from the Writing Desk) ================= */
@@ -281,7 +294,7 @@ function sampleDB(){
 function load(){try{const s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return null}}
 let dirH=null,pushT=null,pushing=false,syncing=false,lastSaved=null,stMsg='';
 const seedSig=new Map();
-const sig=x=>JSON.stringify([x.title,x.text,x.why,x.later,x.dig]);
+const sig=x=>JSON.stringify([x.title,x.text,x.why,x.later,x.dig,(x.hooks||[]).slice().sort()]);
 function stamp(keep){const now=Date.now();db.tomb=db.tomb||{};db.syncBase=db.syncBase||{};const ids=new Set();
   for(const x of db.seeds){ids.add(x.id);const g=sig(x);if(!seedSig.has(x.id)){seedSig.set(x.id,g);if(!x.updated)x.updated=now}else if(seedSig.get(x.id)!==g){seedSig.set(x.id,g);x.updated=now}}
   for(const id of [...seedSig.keys()])if(!ids.has(id)){seedSig.delete(id);db.tomb[id]=now}
@@ -308,7 +321,7 @@ function schedulePush(){if(!dirH)return;clearTimeout(pushT);pushT=setTimeout(pus
 async function wr(dir,name,obj){const fh=await dir.getFileHandle(name,{create:true});const w=await fh.createWritable();await w.write(JSON.stringify(obj,null,1));await w.close()}
 async function push(){if(!dirH)return;if(pushing){schedulePush();return}pushing=true;
   try{const sd=await dirH.getDirectoryHandle('seeds',{create:true});const base=db.syncBase=db.syncBase||{};
-    for(const x of db.seeds){if(base[x.id]!==x.updated){await wr(sd,x.id+'.json',{id:x.id,title:x.title,text:x.text,why:x.why,later:x.later,dig:x.dig||{},updated:x.updated});base[x.id]=x.updated}}
+    for(const x of db.seeds){if(base[x.id]!==x.updated){await wr(sd,x.id+'.json',{id:x.id,title:x.title,text:x.text,why:x.why,later:x.later,dig:x.dig||{},hooks:x.hooks||[],updated:x.updated});base[x.id]=x.updated}}
     for(const [id,t] of Object.entries(db.tomb||{})){if(base[id]!==t){await wr(sd,id+'.json',{id,deleted:true,updated:t});base[id]=t}}
     const lib=Object.assign({},db,{seeds:undefined,seedCards:Object.fromEntries(db.seeds.map(x=>[x.id,x.cards||[]]))});
     await wr(dirH,'library.json',lib);lastSaved=Date.now();
@@ -320,12 +333,12 @@ async function pull(libCards){const sd=await dirH.getDirectoryHandle('seeds',{cr
   for await(const [n,h] of sd.entries()){if(!n.endsWith('.json')||h.kind!=='file')continue;let f;try{f=JSON.parse(await (await h.getFile()).text())}catch(e){continue}if(!f||!f.id)continue;
     const loc=seedById(f.id);const fu=f.updated||0;
     if(f.deleted){db.tomb[f.id]=Math.max(db.tomb[f.id]||0,fu);base[f.id]=fu;if(loc&&(loc.updated||0)<=fu){dropSeed(f.id);changed.add(f.id)}continue}
-    if(!loc){if((db.tomb[f.id]||0)>=fu&&db.tomb[f.id])continue;db.seeds.unshift({id:f.id,title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{},cards:(libCards&&libCards[f.id])||[],updated:fu});seedSig.set(f.id,sig(seedById(f.id)));base[f.id]=fu;changed.add(f.id);continue}
+    if(!loc){if((db.tomb[f.id]||0)>=fu&&db.tomb[f.id])continue;db.seeds.unshift({id:f.id,title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{},hooks:f.hooks||[],cards:(libCards&&libCards[f.id])||[],updated:fu});seedSig.set(f.id,sig(seedById(f.id)));base[f.id]=fu;changed.add(f.id);continue}
     if(fu>(loc.updated||0)){
-      const same=sig(loc)===sig({title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{}});
+      const same=sig(loc)===sig({title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{},hooks:f.hooks||[]});
       if(!same&&(loc.updated||0)>(base[f.id]||0)){ /* edited on both sides: keep both */
-        db.seeds.unshift({id:uid(),title:(loc.title||'')+' (copy from this Mac)',text:loc.text,why:loc.why,later:loc.later,dig:loc.dig||{},cards:[],updated:Date.now()});seedSig.set(db.seeds[0].id,sig(db.seeds[0]));toast('A seed was edited on two devices. Both versions are kept.')}
-      Object.assign(loc,{title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{},updated:fu});seedSig.set(loc.id,sig(loc));base[f.id]=fu;changed.add(f.id)}
+        db.seeds.unshift({id:uid(),title:(loc.title||'')+' (copy from this Mac)',text:loc.text,why:loc.why,later:loc.later,dig:loc.dig||{},hooks:loc.hooks||[],cards:[],updated:Date.now()});seedSig.set(db.seeds[0].id,sig(db.seeds[0]));toast('A seed was edited on two devices. Both versions are kept.')}
+      Object.assign(loc,{title:f.title||'',text:f.text||'',why:f.why||'',later:f.later||'',dig:f.dig||{},hooks:f.hooks||[],updated:fu});seedSig.set(loc.id,sig(loc));base[f.id]=fu;changed.add(f.id)}
     else if(fu===(loc.updated||0))base[f.id]=fu}
   return changed}
 async function syncNow(quiet){if(!dirH||syncing)return;syncing=true;
@@ -417,11 +430,11 @@ function renderLeft(){
     const list=db.seeds.filter(s=>!f||seedName(s).toLowerCase().includes(f)||(s.text||'').toLowerCase().includes(f));
     h=list.map(s=>`<div class="item ${ui.sel&&ui.sel.id===s.id?'sel':''}" data-act="open" data-k="seeds" data-id="${s.id}"><span>${seedLabel(s)}</span><small>${s.cards.length} cards</small></div>`).join('')||'<div class="empty">No seeds yet.</div>';
   }else if(ui.tab==='cards'){
-    $('#newbtn').innerHTML=`<div class="hint">Cards are made while you deconstruct a seed, or here:</div><div class="row"><select id="nct"><option value="">Choose type…</option>${Object.entries(CARD_TYPES).map(([k,v])=>`<option value="${k}">${v.icon} ${v.label}</option>`).join('')}</select><button data-act="newcard">＋ New card</button></div>`;
+    $('#newbtn').innerHTML=`<div class="hint">Cards come from a seed, or you can make one here:</div><div class="row"><select id="nct"><option value="">Choose type…</option>${Object.entries(CARD_TYPES).filter(([k])=>NEW_TYPES.includes(k)).map(([k,v])=>`<option value="${k}">${v.icon} ${v.label}</option>`).join('')}</select><button data-act="newcard">＋ New card</button></div>`;
     for(const [t,def] of Object.entries(CARD_TYPES)){
       const cs=db.cards.filter(c=>c.type===t&&(!f||c.name.toLowerCase().includes(f)||c.aliases.some(a=>a.toLowerCase().includes(f))));
       if(!cs.length)continue;
-      h+=`<h6>${def.icon} ${({person:'People',place:'Places',object:'Objects',idea:'Ideas',action:'Actions',phrase:'Phrases & lines'})[t]}</h6>`+cs.map(c=>`<div class="item ${ui.sel&&ui.sel.id===c.id?'sel':''}" data-act="open" data-k="cards" data-id="${c.id}"><span>${esc(c.name||'Untitled')}</span><small>${seedsOfCard(c).length} seed${seedsOfCard(c).length===1?'':'s'}</small></div>`).join('');
+      h+=`<h6>${def.icon} ${({person:'People',place:'Places',object:'Objects',idea:'Ideas',action:'Actions',phrase:'Words',feeling:'Feelings',whatif:'What ifs'})[t]}</h6>`+cs.map(c=>`<div class="item ${ui.sel&&ui.sel.id===c.id?'sel':''}" data-act="open" data-k="cards" data-id="${c.id}"><span>${esc(c.name||'Untitled')}</span><small>${seedsOfCard(c).length} seed${seedsOfCard(c).length===1?'':'s'}</small></div>`).join('');
     }
     h=h||'<div class="empty">No cards yet.</div>';
   }else if(ui.tab==='progress'){
@@ -465,13 +478,20 @@ function seedView(s){
   const others=db.cards.filter(c=>!s.cards.includes(c.id));
   const form=ui.newCard?`<div class="sec newform"><h3 style="margin-bottom:6px">New card</h3>
     <div class="selbox" id="selBox">${ui.excerpt?`Linked to your words: “${esc(ui.excerpt)}” <a class="from" data-act="clearsel">clear</a>`:'<span class="hint">Tip: select words in your seed first and they will be linked to this card.</span>'}</div>
-    <div class="row"><select id="dType"><option value="">Choose card type…</option>${Object.entries(CARD_TYPES).map(([k,v])=>`<option value="${k}">${v.icon} ${v.label}</option>`).join('')}</select><input id="dName" list="dl" placeholder="Name the card" autocomplete="off"><button class="pri" data-act="decon" data-id="${s.id}">Add card</button><button class="ghost" data-act="cancelnew">Cancel</button></div>
+    <div class="row"><select id="dType"><option value="">Choose card type…</option>${Object.entries(CARD_TYPES).filter(([k])=>NEW_TYPES.includes(k)).map(([k,v])=>`<option value="${k}" ${ui.newType===k?'selected':''}>${v.icon} ${v.label}</option>`).join('')}</select><input id="dName" list="dl" placeholder="Name the card" autocomplete="off"><button class="pri" data-act="decon" data-id="${s.id}">Add card</button><button class="ghost" data-act="cancelnew">Cancel</button></div>
     <datalist id="dl"></datalist><div class="hint" id="dHint"></div></div>`:'';
+  const hk=s.hooks||[];
+  const master=`<div class="sec master"><h3 style="margin:0 0 4px">What made you curious about this seed, and why?</h3>
+    <div class="hint" style="margin-bottom:8px">Pick what pulled you in. More than one is fine.</div>
+    <div class="chips">${HOOKS.map(([k,l])=>`<button type="button" class="chip ${hk.includes(k)?'on':''}" data-act="hook" data-k="${k}">${hk.includes(k)?'✓ ':''}${CARD_TYPES[k].icon} ${l}</button>`).join('')}</div>
+    <textarea data-bind="seedwhy" placeholder="Why? In a line or two…" style="min-height:70px;margin-top:10px">${esc(s.why||'')}</textarea>
+    ${hk.length?`<div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="hint">Make a card for:</span>${hk.map(k=>`<button type="button" class="ghost" data-act="newcardform" data-t="${k}">＋ ${CARD_TYPES[k].icon} ${CARD_TYPES[k].label}</button>`).join('')}</div>`:''}</div>`;
   return `<div class="wrap"><div class="head" style="justify-content:flex-end"><button class="ghost" data-act="delseed" data-id="${s.id}">Delete seed</button></div>
   <textarea id="seedtext" data-bind="seedtext" placeholder="Write your seed here…" style="min-height:200px;font-family:var(--ff);font-size:17px;line-height:1.7;padding:16px 18px">${esc(s.text||'')}</textarea>
+  ${master}
   <div class="cardsHead"><h3>Cards for this seed</h3></div>
   ${form}
-  <div class="igrid">${attached.map(c=>cardTile(c,s,true)).join('')}${ui.newCard?'':`<div class="icard newc" data-act="newcardform"><b>＋ New card</b><div class="it">Person, place, object, idea, action, phrase</div></div>`}</div>
+  <div class="igrid">${attached.map(c=>cardTile(c,s,true)).join('')}${ui.newCard?'':`<div class="icard newc" data-act="newcardform"><b>＋ New card</b><div class="it">People, place, action, words, feeling, what if</div></div>`}</div>
   ${others.length?`<div class="cardsHead" style="margin-top:26px"><h3>Pick from your other cards</h3><input id="libf" placeholder="Filter…" style="max-width:200px"></div><div class="igrid" id="libgrid">${others.map(c=>cardTile(c,s,false)).join('')}</div>`:''}
   </div>`;
 }
@@ -488,7 +508,7 @@ function cardView(c){
   const def=CARD_TYPES[c.type];
   const groups=[...def.groups,...COMMON];
   const from=ui.from&&seedById(ui.from)?seedById(ui.from):null;
-  const bar=`<div class="from-bar ${from?'':'none'}"><b>Working from:</b><select data-bind="from">${`<option value="">— no seed (general) —</option>`+db.seeds.map(s=>`<option value="${s.id}" ${from&&from.id===s.id?'selected':''}>${esc(seedLabel(s))}</option>`).join('')}</select><span class="hint" style="margin:0">${from?'New answers will be linked to this seed.':'New answers will not be linked to any seed. Pick one to link them.'}</span></div>`;
+  const bar=`${ui.pieceBack&&pieceById(ui.pieceBack)?`<div class="from-bar"><button class="pri" data-act="backpiece">← Back to “${esc(pieceById(ui.pieceBack).title||'piece')}”</button></div>`:''}<div class="from-bar ${from?'':'none'}"><b>Working from:</b><select data-bind="from">${`<option value="">— no seed (general) —</option>`+db.seeds.map(s=>`<option value="${s.id}" ${from&&from.id===s.id?'selected':''}>${esc(seedLabel(s))}</option>`).join('')}</select><span class="hint" style="margin:0">${from?'New answers will be linked to this seed.':'New answers will not be linked to any seed. Pick one to link them.'}</span></div>`;
   const body=groups.map((g,gi)=>`<div class="grp">${esc(g.h)}</div><div class="qgrid">`+g.qs.map((q,qi)=>{
     const id=(gi<def.groups.length?c.type:'common')+'.'+gi+'.'+qi;
     const as=c.answers.filter(a=>a.q===id&&a.text&&a.text.trim());
@@ -562,6 +582,7 @@ function pieceView(p){
     <div class="sec"><h3>Material</h3><p class="sub">Pull seeds and cards into this piece. They stay linked to their sources and stay visible while you write.</p>
      <div class="prow"><select id="pS"><option value="">Add a seed…</option>${sOpts}</select><button data-act="pulls" data-id="${p.id}">Add</button></div>
      <div class="prow" style="margin-top:6px"><select id="pC"><option value="">Add a card…</option>${cOpts}</select><button data-act="pullc" data-id="${p.id}">Add</button></div>
+     <div class="prow" style="margin-top:6px"><select id="pNT"><option value="">New card type…</option>${NEW_TYPES.map(k=>`<option value="${k}">${CARD_TYPES[k].icon} ${CARD_TYPES[k].label}</option>`).join('')}</select><input id="pNN" placeholder="Name it" style="flex:1 1 0;min-width:0"><button data-act="pnewc" data-id="${p.id}">＋ New</button></div>
      <div class="chips">${seeds.map(s=>`<span class="chip" data-act="unpull" data-w="seeds" data-pid="${p.id}" data-id="${s.id}" title="Click to remove">${esc(seedLabel(s))} ✕</span>`).join('')}${cards.map(c=>`<span class="chip" data-act="unpull" data-w="cards" data-pid="${p.id}" data-id="${c.id}" title="Click to remove">${CARD_TYPES[c.type].icon} ${esc(c.name)} ✕</span>`).join('')}</div>
      <div class="matscroll">${sheet}</div>
      <div class="row" style="margin-top:8px"><button class="sm" data-act="sheetmd" data-id="${p.id}">Download material as text</button></div></div>
@@ -633,7 +654,7 @@ function toMd(p){
 }
 const ACT={
  tab(el){ui.tab=el.dataset.t;ui.sel=null;ui.pFocus=false;if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});render()},
- open(el){ui.pFocus=false;ui.tab=el.dataset.k;ui.sel={k:el.dataset.k,id:el.dataset.id};ui.from=el.dataset.k==='seeds'?el.dataset.id:null;ui.adding=null;ui.excerpt='';ui.newCard=false;render()},
+ open(el){ui.pFocus=false;ui.pieceBack=null;ui.tab=el.dataset.k;ui.sel={k:el.dataset.k,id:el.dataset.id};ui.from=el.dataset.k==='seeds'?el.dataset.id:null;ui.adding=null;ui.excerpt='';ui.newCard=false;render()},
  opencard(el){ui.tab='cards';ui.sel={k:'cards',id:el.dataset.id};ui.from=el.dataset.from||null;ui.adding=null;render();window.scrollTo(0,0);$('#main').scrollTop=0},
   newseed(){const sd={id:uid(),title:'',text:'',why:'',later:'',dig:{},cards:[]};db.seeds.unshift(sd);evt('seed_new',sd.id,'Seed');save();ui.tab='seeds';ui.sel={k:'seeds',id:sd.id};ui.from=sd.id;ui.excerpt='';render();const t=$('#seedtext');if(t)t.focus()},
  async newcard(){const t=$('#nct').value;if(!t){toast('Choose a card type first');return}const n=await ask({title:'Name this '+CARD_TYPES[t].label.toLowerCase(),input:true,ok:'Create',placeholder:'Name'});if(!n)return;let c=findCard(t,n);if(c)toast('That card already exists — opened it');else{c={id:uid(),type:t,name:n.trim(),aliases:[],answers:[],mentions:[]};db.cards.push(c);evt('card_new',c.id,c.name);save()}ui.sel={k:'cards',id:c.id};ui.from=null;render()},
@@ -659,7 +680,9 @@ const ACT={
    c.mentions=c.mentions||[];
    if(ui.excerpt&&!c.mentions.some(m=>m.seed===s.id&&m.text===ui.excerpt)){c.mentions.push({id:uid(),seed:s.id,text:ui.excerpt});evt('quote',c.id,c.name)}
    const linked=attach(s,c);if(linked&&!isNew)evt('card_reused',c.id,c.name);ui.excerpt='';ui.newCard=false;save();ui.tab='seeds';ui.sel={k:'seeds',id:s.id};ui.from=s.id;render()},
- newcardform(){ui.newCard=true;render();const n=$('#dName');if(n)n.focus()},
+ backpiece(){const id=ui.pieceBack;ui.pieceBack=null;ui.tab='pieces';ui.sel={k:'pieces',id};render()},
+ hook(el){const sd=seedById(ui.sel.id);sd.hooks=sd.hooks||[];const k=el.dataset.k;sd.hooks=sd.hooks.includes(k)?sd.hooks.filter(x=>x!==k):[...sd.hooks,k];sd.updated=Date.now();save();render()},
+ newcardform(el){ui.newCard=true;ui.newType=(el&&el.dataset&&el.dataset.t)||'';render();if(ui.newType){const t=$('#dType');if(t){t.value=ui.newType;hint()}}const n=$('#dName');if(n)n.focus()},
  cancelnew(){ui.newCard=false;render()},
  pullcard(el){const sd=seedById(el.dataset.from),c=cardById(el.dataset.id);if(attach(sd,c))evt('card_reused',c.id,c.name);save();toast('Added to this seed');ACT.opencard(el)},
  clearsel(){ui.excerpt='';const b=$('#selBox');if(b)b.innerHTML='<span class="hint">Tip: select words in your seed first and they will be linked to this card.</span>'},
@@ -677,6 +700,7 @@ const ACT={
  async delpiece(el){if(!(await ask({title:'Delete this piece?',message:'Your seeds and cards are kept.',ok:'Delete'})))return;db.pieces=db.pieces.filter(p=>p.id!==el.dataset.id);ui.sel=null;save();render()},
  pulls(el){const v=$('#pS').value;if(!v)return;pieceById(el.dataset.id).seeds.push(v);evt('pull',v,'seed');save();render()},
  pullc(el){const v=$('#pC').value;if(!v)return;pieceById(el.dataset.id).cards.push(v);evt('pull',v,'card');save();render()},
+ pnewc(el){const t=$('#pNT').value,n=$('#pNN').value.trim();if(!t){toast('Choose a card type first');return}if(!n){toast('Name the card first');return}const p=pieceById(el.dataset.id);let c=findCard(t,n);if(!c){c={id:uid(),type:t,name:n,aliases:[],answers:[],mentions:[]};db.cards.push(c);evt('card_new',c.id,c.name)}if(!p.cards.includes(c.id)){p.cards.push(c.id);evt('pull',c.id,'card')}save();ui.from=null;ui.pieceBack=p.id;ui.tab='cards';ui.sel={k:'cards',id:c.id};render();toast('Card added to this piece')},
  unpull(el){const p=pieceById(el.dataset.pid);p[el.dataset.w]=p[el.dataset.w].filter(x=>x!==el.dataset.id);save();render()},
  sheetmd(el){const p=pieceById(el.dataset.id);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([toMd(p)],{type:'text/markdown'}));a.download=(p.title||'piece').replace(/[^\w\- ]+/g,'')+'-prep.md';document.body.appendChild(a);a.click();a.remove()},
  folder(){chooseFolder()},reconnect(){reconnect()},async syncnow(){setSt('saving');await syncNow(false);if(stMsg==='ok')toast('Synced with the folder.')},
