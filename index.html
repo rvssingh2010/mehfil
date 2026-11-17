@@ -73,6 +73,7 @@ a.from{color:var(--acc);cursor:pointer;border-bottom:1px dotted var(--acc)}
 .qcard.done{border-top-color:var(--ok)}
 .qcard>label{font-size:13.5px;line-height:1.35;margin-bottom:6px}
 .qcard .answ textarea{min-height:64px}
+.answ textarea{resize:none}.xp{color:var(--acc)!important}
 .grp{margin:22px 0 10px}
 .two2{display:grid;grid-template-columns:1.5fr 1fr;gap:22px;align-items:start}@media(max-width:1000px){.two2{grid-template-columns:1fr}}
 .ptext{min-height:52vh;font:17px/1.7 Georgia,'Iowan Old Style',serif!important;padding:16px 18px;border-radius:8px}
@@ -472,7 +473,7 @@ function qFor(type,id){const def=CARD_TYPES[type];const [,g,q]=id.split('.');con
 /* ---- card view ---- */
 function evSel(a){return `<select class="ev ${a.ev||'none'}" data-bind="ev" data-aid="${a.id}">${['','observed','told','assumed'].map(e=>`<option value="${e}" ${e===(a.ev||'')?'selected':''}>${e||'evidence? (optional)'}</option>`).join('')}</select>`}
 function seedSel(a){return `<select class="seedsel ${a.seed&&seedById(a.seed)?'has':'none'}" data-bind="ansseed" data-aid="${a.id}" title="Which seed did this come from? Change it here."><option value="">no seed</option>${db.seeds.map(s=>`<option value="${s.id}" ${s.id===a.seed?'selected':''}>${esc(seedLabel(s))}</option>`).join('')}</select>`}
-function metaHTML(a){const sd=a.seed?seedById(a.seed):null;return `<div class="meta"><span>from:</span>${seedSel(a)}${sd?`<a class="from" data-act="open" data-k="seeds" data-id="${sd.id}" title="Open this seed">open ↗</a>`:''}${evSel(a)}<button class="sm ghost" data-act="delans" data-aid="${a.id}">remove</button></div>`}
+function metaHTML(a){const sd=a.seed?seedById(a.seed):null;return `<div class="meta"><span>from:</span>${seedSel(a)}${sd?`<a class="from" data-act="open" data-k="seeds" data-id="${sd.id}" title="Open this seed">open ↗</a>`:''}${evSel(a)}<button class="sm ghost xp" data-act="togans" data-aid="${a.id}" style="display:none">Expand ▾</button><button class="sm ghost" data-act="delans" data-aid="${a.id}">remove</button></div>`}
 function answerHTML(a){return `<div class="answ" data-aid="${a.id}"><textarea data-bind="ans" data-aid="${a.id}">${esc(a.text)}</textarea>${metaHTML(a)}</div>`}
 function newBoxHTML(){return `<div class="answ new"><textarea data-bind="newans" placeholder="Write here…"></textarea></div>`}
 
@@ -662,6 +663,7 @@ const ACT={
    c.answers.push({id:uid(),q:el.dataset.q,text,seed,ev:ui.ev[key]||'observed'});
    if(seed)attach(seedById(seed),c);
    delete ui.draft[key];delete ui.ev[key];ui.adding=null;save();render();toast(seed?'Linked to “'+seedById(seed).title+'”':'Added (no seed linked)')},
+ togans(el){ui.exp=ui.exp||{};const k=el.dataset.aid;ui.exp[k]=!ui.exp[k];const t=el.closest('.answ').querySelector('textarea');autosize(t)},
  delans(el){for(const c of db.cards)c.answers=c.answers.filter(a=>a.id!==el.dataset.aid);save();render()},
  async delseed(el){if(!(await ask({title:'Delete this seed?',message:'Answers it produced stay on their cards, marked “no seed”.',ok:'Delete'})))return;const id=el.dataset.id;db.seeds=db.seeds.filter(s=>s.id!==id);db.cards.forEach(c=>{c.answers.forEach(a=>{if(a.seed===id)a.seed=null});c.mentions=(c.mentions||[]).filter(m=>m.seed!==id)});db.pieces.forEach(p=>p.seeds=p.seeds.filter(x=>x!==id));ui.sel=null;ui.from=null;save();render()},
  async delcard(el){if(!(await ask({title:'Delete this card?',message:'All its answers will be deleted too.',ok:'Delete'})))return;const id=el.dataset.id;db.cards=db.cards.filter(c=>c.id!==id);db.seeds.forEach(s=>s.cards=s.cards.filter(x=>x!==id));db.pieces.forEach(p=>p.cards=p.cards.filter(x=>x!==id));ui.sel=null;save();render()},
@@ -704,12 +706,12 @@ document.addEventListener('input',e=>{const t=e.target,b=t.dataset&&t.dataset.bi
   else if(b==='piecenote'){pieceById(ui.sel.id).note=t.value;save()}
   else if(b==='premise'){pieceById(ui.sel.id).premise=t.value;save()}
   else if(b==='hyp'){pieceById(ui.sel.id).hyp=t.value;save()}
-  else if(b==='ans'){for(const c of db.cards)for(const a of c.answers)if(a.id===t.dataset.aid){const ow=words(a.text);a.text=t.value;trackAdd('card',c.id,c.name,'',words(a.text)-ow)}save()}
-  else if(b==='newans'){const w=t.closest('.answ'),q=t.closest('.q');if(!t.value.trim())return;
+  else if(b==='ans'){autosize(t);for(const c of db.cards)for(const a of c.answers)if(a.id===t.dataset.aid){const ow=words(a.text);a.text=t.value;trackAdd('card',c.id,c.name,'',words(a.text)-ow)}save()}
+  else if(b==='newans'){autosize(t);const w=t.closest('.answ'),q=t.closest('.q');if(!t.value.trim())return;
     const c=cardById(q.dataset.cid);const seed=ui.from&&seedById(ui.from)?ui.from:null;
     const a={id:uid(),q:q.dataset.qid,text:t.value,seed,ev:''};c.answers.push(a);evt('answer',c.id,c.name);trackAdd('card',c.id,c.name,'',words(t.value));if(seed)attach(seedById(seed),c);
     t.dataset.bind='ans';t.dataset.aid=a.id;w.classList.remove('new');w.dataset.aid=a.id;t.removeAttribute('placeholder');
-    w.insertAdjacentHTML('beforeend',metaHTML(a));w.insertAdjacentHTML('afterend',newBoxHTML());q.classList.add('done');save()}
+    w.insertAdjacentHTML('beforeend',metaHTML(a));w.insertAdjacentHTML('afterend',newBoxHTML());q.classList.add('done');autosize(t);save()}
 });
 document.addEventListener('change',e=>{const t=e.target,b=t.dataset&&t.dataset.bind;if(t.id==='dType'){hint();return}if(!b)return;
   if(b==='from'){ui.from=t.value||null;render()}
@@ -758,7 +760,15 @@ function grabSel(e){const t=e.target;if(!t||t.id!=='seedtext')return;
   const b=$('#selBox');if(b)b.innerHTML='Linked to your words: “'+esc(sel)+'” <a class="from" data-act="clearsel">clear</a>';
 }
 ['select','mouseup','keyup'].forEach(ev=>document.addEventListener(ev,grabSel,true));
-function afterRender(){const hp=$('#hpill');if(hp)hp.style.display=$('#ptext')?'none':'';applyLang()}
+const ANS_CAP=128;
+function autosize(t){if(!t||!t.style)return;t.style.height='auto';const full=t.scrollHeight+2;const w=t.closest('.answ');const aid=t.dataset.aid;ui.exp=ui.exp||{};
+  const big=full>ANS_CAP+6;const open=!!(aid&&ui.exp[aid]);
+  t.style.height=(big&&!open?ANS_CAP:full)+'px';t.style.overflowY=big&&!open?'auto':'hidden';
+  const b=w&&w.querySelector('.xp');if(b){b.style.display=big?'':'none';b.textContent=open?'Collapse ▴':'Expand ▾'}}
+function fitAnswers(){document.querySelectorAll('.answ textarea').forEach(autosize)}
+window.addEventListener('resize',()=>{clearTimeout(fitAnswers.h);fitAnswers.h=setTimeout(fitAnswers,120)});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitAnswers);
+function afterRender(){const hp=$('#hpill');if(hp)hp.style.display=$('#ptext')?'none':'';applyLang();fitAnswers()}
 function applyLang(){document.querySelectorAll('#ptext,#seedtext,.qcard textarea').forEach(el=>{if(db.prefs.lang)el.setAttribute('lang',db.prefs.lang);else el.removeAttribute('lang')})}
 window.__prep={get db(){return db},ui,render,connectHandle:h=>connect(h,true),syncNow:()=>syncNow(false),get st(){return stMsg}};
 render();initFolder();
