@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><meta name="theme-color" content="#faf9f6">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials"><link rel="icon" href="icon-192.png"><meta name="theme-color" content="#faf9f6">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Prepare — prototype</title>
 <style>
@@ -55,6 +55,7 @@ a.from{color:var(--acc);cursor:pointer;border-bottom:1px dotted var(--acc)}
 .from-bar.none{background:var(--assbg);border-color:var(--ass)}
 .answ{margin:6px 0}.answ textarea{min-height:46px}.answ.new textarea{border-style:dashed;min-height:46px}
 .answ .meta{margin-top:3px}
+.seedsel{max-width:220px;border-radius:10px;padding:1px 8px;font-size:12px;cursor:pointer;background:var(--accbg);color:var(--acc);border:1px solid var(--acc);appearance:none;text-overflow:ellipsis}.seedsel.none{background:transparent;color:var(--mute);border:1px dashed var(--line)}
 .ev.none{background:transparent;color:var(--mute);border:1px dashed var(--line)}
 .cardsHead{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px}.cardsHead h3{margin:0;font-size:15px}
 .igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
@@ -239,7 +240,8 @@ let db;
 const ui={tab:'seeds',sel:null,from:null,adding:null,draft:{},ev:{},filter:'',excerpt:'',newCard:false,day:null,pFocus:false};
 
 function blankDB(){return{seeds:[],cards:[],pieces:[],log:[],events:[]}}
-function norm(){db.log=db.log||[];db.events=db.events||[];db.prefs=db.prefs||{};if(!db.prefs.lh)db.prefs.lh='1.7';if(!db.prefs.font||!FONTS[db.prefs.font])db.prefs.font='sys';if(db.prefs.spell==null)db.prefs.spell=true;db.pieces.forEach(p=>{if(p.text==null)p.text='';if(p.html==null)p.html=textToHtml(p.text);p.phase=p.phase||'prepare';p.status=p.status||'active';p.phaseSince=p.phaseSince||TODAY();['marks','note','persona','premise','hyp'].forEach(k=>{if(p[k]==null)p[k]=''})})}
+const MARGINS={'8':'Very narrow','20':'Narrow','40':'Normal','80':'Wide','130':'Wider','200':'Widest'};
+function norm(){db.log=db.log||[];db.events=db.events||[];db.prefs=db.prefs||{};if(!db.prefs.lh)db.prefs.lh='1.7';if(!MARGINS[db.prefs.mg])db.prefs.mg='40';if(!db.prefs.font||!FONTS[db.prefs.font])db.prefs.font='sys';if(db.prefs.spell==null)db.prefs.spell=true;db.pieces.forEach(p=>{if(p.text==null)p.text='';if(p.html==null)p.html=textToHtml(p.text);p.phase=p.phase||'prepare';p.status=p.status||'active';p.phaseSince=p.phaseSince||TODAY();['marks','note','persona','premise','hyp'].forEach(k=>{if(p[k]==null)p[k]=''})})}
 function sampleDB(){
   const d=blankDB();
   const mk=(o)=>({id:uid(),...o});
@@ -467,7 +469,8 @@ function qFor(type,id){const def=CARD_TYPES[type];const [,g,q]=id.split('.');con
 
 /* ---- card view ---- */
 function evSel(a){return `<select class="ev ${a.ev||'none'}" data-bind="ev" data-aid="${a.id}">${['','observed','told','assumed'].map(e=>`<option value="${e}" ${e===(a.ev||'')?'selected':''}>${e||'evidence? (optional)'}</option>`).join('')}</select>`}
-function metaHTML(a){const sd=a.seed?seedById(a.seed):null;return `<div class="meta"><a class="from" ${sd?`data-act="open" data-k="seeds" data-id="${sd.id}"`:''}>from: ${sd?esc(seedLabel(sd)):'no seed'}</a>${evSel(a)}<button class="sm ghost" data-act="delans" data-aid="${a.id}">remove</button></div>`}
+function seedSel(a){return `<select class="seedsel ${a.seed&&seedById(a.seed)?'has':'none'}" data-bind="ansseed" data-aid="${a.id}" title="Which seed did this come from? Change it here."><option value="">no seed</option>${db.seeds.map(s=>`<option value="${s.id}" ${s.id===a.seed?'selected':''}>${esc(seedLabel(s))}</option>`).join('')}</select>`}
+function metaHTML(a){const sd=a.seed?seedById(a.seed):null;return `<div class="meta"><span>from:</span>${seedSel(a)}${sd?`<a class="from" data-act="open" data-k="seeds" data-id="${sd.id}" title="Open this seed">open ↗</a>`:''}${evSel(a)}<button class="sm ghost" data-act="delans" data-aid="${a.id}">remove</button></div>`}
 function answerHTML(a){return `<div class="answ" data-aid="${a.id}"><textarea data-bind="ans" data-aid="${a.id}">${esc(a.text)}</textarea>${metaHTML(a)}</div>`}
 function newBoxHTML(){return `<div class="answ new"><textarea data-bind="newans" placeholder="Write here…"></textarea></div>`}
 
@@ -520,9 +523,10 @@ function pieceView(p){
    ${B('justifyLeft',al('l',[[1,15],[1,10],[1,15],[1,9]]),'Align left')}${B('justifyCenter',al('c',[[1,15],[4,12],[1,15],[5,11]]),'Centre')}${B('justifyRight',al('r',[[1,15],[6,15],[1,15],[7,15]]),'Align right')}${B('justifyFull',al('j',[[1,15],[1,15],[1,15],[1,15]]),'Justify')}<span class="tsep"></span>
    ${B('insertUnorderedList','• List','Bulleted list')}${B('insertOrderedList','1. List','Numbered list')}${B('outdent','⇤','Decrease indent')}${B('indent','⇥','Increase indent')}<span class="tsep"></span>
    ${B('link','Link','Add a link')}${B('unlink','Unlink','Remove link')}${B('insertHorizontalRule','―','Divider line')}${B('removeFormat','Clear','Clear formatting of the selection')}<span class="tsep"></span>
+   <select data-bind="fmtmg" title="Side margins">${Object.entries(MARGINS).map(([v,l])=>`<option value="${v}" ${db.prefs.mg===v?'selected':''}>${l} margins</option>`).join('')}</select>
    <select data-bind="fmtlh" title="Line spacing">${[['1.4','Tight'],['1.7','Normal'],['2','Roomy']].map(([v,l])=>`<option value="${v}" ${db.prefs.lh===v?'selected':''}>${l} spacing</option>`).join('')}</select>
    <button type="button" class="tbb ${db.prefs.spell?'on':''}" data-act="togspell" title="Spellcheck on or off">Spellcheck</button><button type="button" class="tbb ${ui.pFocus?'on':''}" data-act="togfocus" title="Full-screen writing: only the editor">Focus</button><button type="button" class="tbb" data-act="hindi" title="Hindi typing help and Devanagari characters">हिं Hindi</button></div>`;
-  const pageHTML=`<div class="page"><div id="ptext" class="pedit" contenteditable="${ro?'false':'true'}" data-bind="piecehtml" data-ph="${ro?'Read only in the close read.':'Start writing…  English or हिन्दी'}" spellcheck="${db.prefs.spell}" style="line-height:${db.prefs.lh}">${edHtml}</div></div>`;
+  const pageHTML=`<div class="page"><div id="ptext" class="pedit" contenteditable="${ro?'false':'true'}" data-bind="piecehtml" data-ph="${ro?'Read only in the close read.':'Start writing…  English or हिन्दी'}" spellcheck="${db.prefs.spell}" style="line-height:${db.prefs.lh};padding-left:${db.prefs.mg}px;padding-right:${db.prefs.mg}px">${edHtml}</div></div>`;
   const writer=`${tb}${pageHTML}`;
   if(ui.pFocus)return `<div class="fx"><div class="fxbar"><span class="fxt">${esc(p.title)}</span><span class="fxinfo"><b id="pwc">${w.toLocaleString()}</b> words</span><button data-act="togfocus">Exit focus (Esc)</button></div>${tb}<div class="fxscroll">${pageHTML}</div></div>`;
   return `<div class="wrap" style="max-width:1300px"><div class="head"><span class="badge">📄 Piece</span><input class="title" data-bind="piecetitle" value="${esc(p.title)}">${p.status==='published'?'<span class="badge">Published</span>':''}<button class="ghost" data-act="delpiece" data-id="${p.id}">Delete</button></div>
@@ -707,12 +711,15 @@ document.addEventListener('input',e=>{const t=e.target,b=t.dataset&&t.dataset.bi
 });
 document.addEventListener('change',e=>{const t=e.target,b=t.dataset&&t.dataset.bind;if(t.id==='dType'){hint();return}if(!b)return;
   if(b==='from'){ui.from=t.value||null;render()}
+  else if(b==='ansseed'){let A=null,C=null;for(const c of db.cards)for(const a of c.answers)if(a.id===t.dataset.aid){A=a;C=c}
+    if(A){A.seed=t.value||null;if(A.seed&&seedById(A.seed))attach(seedById(A.seed),C);else if(A.seed)A.seed=null;save();const m=t.closest('.meta');if(m)m.outerHTML=metaHTML(A);toast(A.seed?'Linked to “'+seedName(seedById(A.seed))+'”':'Seed link removed')}}
   else if(b==='ev'){for(const c of db.cards)for(const a of c.answers)if(a.id===t.dataset.aid)a.ev=t.value;save();t.className='ev '+(t.value||'none')}
   else if(b==='draftev'){ui.ev[t.dataset.key]=t.value}
   else if(b==='fmtblock'){restoreSel();document.execCommand('formatBlock',false,t.value==='p'?'<p>':'<'+t.value+'>');syncEd();updateTb()}
   else if(b==='fmtsize'){if(!t.value)return;restoreSel();document.execCommand('styleWithCSS',false,true);document.execCommand('fontSize',false,t.value);t.value='';syncEd()}
   else if(b==='fmtfont'){db.prefs.font=t.value;save();applyFont()}
   else if(b==='lang'){db.prefs.lang=t.value;save();applyLang()}
+  else if(b==='fmtmg'){db.prefs.mg=t.value;save();const ed=$('#ptext');if(ed){ed.style.paddingLeft=t.value+'px';ed.style.paddingRight=t.value+'px'}}
   else if(b==='fmtlh'){db.prefs.lh=t.value;save();const ed=$('#ptext');if(ed)ed.style.lineHeight=t.value}
   else if(b==='persona'){pieceById(ui.sel.id).persona=t.value;save();render()}
 });
