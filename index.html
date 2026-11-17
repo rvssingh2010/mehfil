@@ -111,6 +111,7 @@ tr[data-act]:hover td{background:var(--sel)}
 .pedit p{margin:0 0 .8em}.pedit h1,.pedit h2,.pedit h3{font-family:var(--ff);line-height:1.25;margin:1em 0 .4em}.pedit h1{font-size:1.7em}.pedit h2{font-size:1.4em}.pedit h3{font-size:1.15em}
 .pedit blockquote{margin:.8em 0;padding:2px 0 2px 16px;border-left:3px solid var(--acc);color:#555}.pedit ul,.pedit ol{margin:0 0 .8em;padding-left:1.6em}.pedit hr{border:none;border-top:1px solid var(--line);margin:1.2em 0}.pedit a{color:var(--acc)}
 .pedit[contenteditable=false]{background:var(--bg)}
+.two2.rp-narrow{grid-template-columns:minmax(0,1fr) 300px}.two2.rp-hidden{grid-template-columns:minmax(0,1fr)}.two2.rp-hidden>div:nth-child(2){display:none}.sidesel{font-size:12px;border:1px solid var(--line);border-radius:8px;padding:2px 6px;background:var(--panel);color:var(--mute);cursor:pointer}
 .two2.focus{grid-template-columns:minmax(0,860px);justify-content:center}.two2.focus>div:nth-child(2){display:none}
 #printArea{display:none;font-family:var(--ff)}
 @media print{body{overflow:visible;background:#fff}#app,#toast,#modal{display:none!important}#printArea{display:block;font:12pt/1.6 var(--ff);color:#000}#printArea h1{font-size:20pt}}
@@ -241,7 +242,7 @@ const ui={tab:'seeds',sel:null,from:null,adding:null,draft:{},ev:{},filter:'',ex
 
 function blankDB(){return{seeds:[],cards:[],pieces:[],log:[],events:[]}}
 const MARGINS={'8':'Very narrow','20':'Narrow','40':'Normal','80':'Wide','130':'Wider','200':'Widest'};
-function norm(){db.log=db.log||[];db.events=db.events||[];db.prefs=db.prefs||{};if(!db.prefs.lh)db.prefs.lh='1.7';if(!MARGINS[db.prefs.mg])db.prefs.mg='40';if(!db.prefs.font||!FONTS[db.prefs.font])db.prefs.font='sys';if(db.prefs.spell==null)db.prefs.spell=true;db.pieces.forEach(p=>{if(p.text==null)p.text='';if(p.html==null)p.html=textToHtml(p.text);p.phase=p.phase||'prepare';p.status=p.status||'active';p.phaseSince=p.phaseSince||TODAY();['marks','note','persona','premise','hyp'].forEach(k=>{if(p[k]==null)p[k]=''})})}
+function norm(){db.log=db.log||[];db.events=db.events||[];db.prefs=db.prefs||{};if(!db.prefs.lh)db.prefs.lh='1.7';if(!MARGINS[db.prefs.mg])db.prefs.mg='40';if(!['wide','narrow','hidden'].includes(db.prefs.rp))db.prefs.rp='wide';if(!db.prefs.font||!FONTS[db.prefs.font])db.prefs.font='sys';if(db.prefs.spell==null)db.prefs.spell=true;db.pieces.forEach(p=>{if(p.text==null)p.text='';if(p.html==null)p.html=textToHtml(p.text);p.phase=p.phase||'prepare';p.status=p.status||'active';p.phaseSince=p.phaseSince||TODAY();['marks','note','persona','premise','hyp'].forEach(k=>{if(p[k]==null)p[k]=''})})}
 function sampleDB(){
   const d=blankDB();
   const mk=(o)=>({id:uid(),...o});
@@ -530,10 +531,10 @@ function pieceView(p){
   const writer=`${tb}${pageHTML}`;
   if(ui.pFocus)return `<div class="fx"><div class="fxbar"><span class="fxt">${esc(p.title)}</span><span class="fxinfo"><b id="pwc">${w.toLocaleString()}</b> words</span><button data-act="togfocus">Exit focus (Esc)</button></div>${tb}<div class="fxscroll">${pageHTML}</div></div>`;
   return `<div class="wrap" style="max-width:1300px"><div class="head"><span class="badge">📄 Piece</span><input class="title" data-bind="piecetitle" value="${esc(p.title)}">${p.status==='published'?'<span class="badge">Published</span>':''}<button class="ghost" data-act="delpiece" data-id="${p.id}">Delete</button></div>
-  <div class="phasebar"><span id="steps">${stepsHTML(p)}</span><span class="sp"></span><span class="lockline">${lock}</span></div>
+  <div class="phasebar"><span id="steps">${stepsHTML(p)}</span><span class="sp"></span><select class="sidesel" data-bind="sidepanel" title="The Brief and Material column on the right">${[['wide','Side panel: wide'],['narrow','Side panel: narrow'],['hidden','Side panel: hidden']].map(([v,l])=>`<option value="${v}" ${db.prefs.rp===v?'selected':''}>${l}</option>`).join('')}</select><span class="lockline">${lock}</span></div>
   ${rest?`<div class="banner">Resting until ${fmtD(ru)}. Leave it alone and come back to read it with fresh eyes.</div>`:''}
   ${p.note?`<div class="banner note"><b>Note for next time:</b> ${esc(p.note)}</div>`:''}
-  <div class="two2 ${ui.pFocus?'focus':''}"><div>
+  <div class="two2 rp-${db.prefs.rp} ${ui.pFocus?'focus':''}"><div>
     <div class="sec"><h3 id="phH">${esc(PH.label)}</h3><p class="sub" id="phSub">${esc(PH.details)}</p>
      ${writer}
      <div class="counter"><span><b id="ptdw">${td.words.toLocaleString()}</b> words today in this piece · <b id="ptdm">${mins(td.secs)}</b> min</span><span class="hint" style="margin:0">Counted automatically</span></div>
@@ -719,6 +720,7 @@ document.addEventListener('change',e=>{const t=e.target,b=t.dataset&&t.dataset.b
   else if(b==='fmtsize'){if(!t.value)return;restoreSel();document.execCommand('styleWithCSS',false,true);document.execCommand('fontSize',false,t.value);t.value='';syncEd()}
   else if(b==='fmtfont'){db.prefs.font=t.value;save();applyFont()}
   else if(b==='lang'){db.prefs.lang=t.value;save();applyLang()}
+  else if(b==='sidepanel'){db.prefs.rp=t.value;save();const g=$('.two2');if(g){g.classList.remove('rp-wide','rp-narrow','rp-hidden');g.classList.add('rp-'+t.value)}}
   else if(b==='fmtmg'){db.prefs.mg=t.value;save();const ed=$('#ptext');if(ed){ed.style.paddingLeft=t.value+'px';ed.style.paddingRight=t.value+'px'}}
   else if(b==='fmtlh'){db.prefs.lh=t.value;save();const ed=$('#ptext');if(ed)ed.style.lineHeight=t.value}
   else if(b==='persona'){pieceById(ui.sel.id).persona=t.value;save();render()}
