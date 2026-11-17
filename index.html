@@ -524,7 +524,10 @@ function cardView(c){
 function stepsHTML(p){return ORDER.map(k=>`<span class="step ${k===p.phase?'cur':ORDER.indexOf(k)<ORDER.indexOf(p.phase)?'past':''}">${PHASES[k].short}</span>`).join('<i>›</i>')}
 function outsHTML(p){const PH=PHASES[p.phase];const o=PH.outcomes?Object.entries(PH.outcomes).map(([k,v])=>`<button class="${k==='complete'?'pri':''}" data-act="outcome" data-pid="${p.id}" data-o="${k}">${v}${k==='continue'?'':' → '+PHASES[NEXT[p.phase][k]].short}</button>`).join(''):'';
   const d=p.phase==='done'?`<button class="pri" data-act="publish" data-pid="${p.id}">Mark published</button><button data-act="backplay" data-pid="${p.id}">Send back to Play</button>`:'';return o+d}
-function stuckHTML(p){return p.phase==='play'?`<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">When stuck</summary><ul class="stuck">${STUCK.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="hint">Change the narrator only after every technique has failed. It should be rare; friction is what keeps the writing from going bland.</p></details>`:''}
+function stuckHTML(p){if(p.phase!=='play')return '';const mine=db.prefs.stuck||[];
+  return `<details style="margin-top:10px" ${ui.stuckOpen?'open':''}><summary style="cursor:pointer;font-weight:600">When stuck</summary><ul class="stuck">${STUCK.map(x=>`<li>${esc(x)}</li>`).join('')}${mine.map((x,i)=>`<li>${esc(x)} <a class="from" data-act="stuckdel" data-i="${i}" title="Remove this point">remove</a></li>`).join('')}</ul>
+  <div class="prow"><input id="stuckNew" placeholder="Add your own point…" style="flex:1 1 0;min-width:0"><button data-act="stuckadd">＋ Add</button></div>
+  <p class="hint">Your own points are saved and show up in every piece. Change the narrator only after every technique has failed. It should be rare; friction is what keeps the writing from going bland.</p></details>`}
 function refreshPhaseUI(p){const PH=PHASES[p.phase];const a=$('#steps');if(a)a.innerHTML=stepsHTML(p);const h=$('#phH');if(h)h.textContent=PH.label;const sb=$('#phSub');if(sb)sb.textContent=PH.details;const o=$('#outs');if(o)o.innerHTML=outsHTML(p);const k=$('#stuckBox');if(k)k.innerHTML=stuckHTML(p);renderLeft()}
 function pieceView(p){
   const sOpts=db.seeds.filter(s=>!p.seeds.includes(s.id)).map(s=>`<option value="${s.id}">${esc(seedLabel(s))}</option>`).join('');
@@ -680,6 +683,8 @@ const ACT={
    c.mentions=c.mentions||[];
    if(ui.excerpt&&!c.mentions.some(m=>m.seed===s.id&&m.text===ui.excerpt)){c.mentions.push({id:uid(),seed:s.id,text:ui.excerpt});evt('quote',c.id,c.name)}
    const linked=attach(s,c);if(linked&&!isNew)evt('card_reused',c.id,c.name);ui.excerpt='';ui.newCard=false;save();ui.tab='seeds';ui.sel={k:'seeds',id:s.id};ui.from=s.id;render()},
+ stuckadd(){const i=$('#stuckNew'),v=i?i.value.trim():'';if(!v){toast('Type a point first');return}db.prefs.stuck=[...(db.prefs.stuck||[]),v];ui.stuckOpen=true;save();const k=$('#stuckBox');if(k)k.innerHTML=stuckHTML(pieceById(ui.sel.id));const n=$('#stuckNew');if(n)n.focus();toast('Saved to When stuck')},
+ stuckdel(el){const m=(db.prefs.stuck||[]).slice();m.splice(+el.dataset.i,1);db.prefs.stuck=m;ui.stuckOpen=true;save();const k=$('#stuckBox');if(k)k.innerHTML=stuckHTML(pieceById(ui.sel.id))},
  backpiece(){const id=ui.pieceBack;ui.pieceBack=null;ui.tab='pieces';ui.sel={k:'pieces',id};render()},
  hook(el){const sd=seedById(ui.sel.id);sd.hooks=sd.hooks||[];const k=el.dataset.k;sd.hooks=sd.hooks.includes(k)?sd.hooks.filter(x=>x!==k):[...sd.hooks,k];sd.updated=Date.now();save();render()},
  newcardform(el){ui.newCard=true;ui.newType=(el&&el.dataset&&el.dataset.t)||'';render();if(ui.newType){const t=$('#dType');if(t){t.value=ui.newType;hint()}}const n=$('#dName');if(n)n.focus()},
@@ -710,6 +715,7 @@ const ACT={
 };
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;if(el.tagName==='A'&&!el.dataset.act)return;const f=ACT[el.dataset.act];if(f){e.preventDefault();f(el,e)}});
 function input(){}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='stuckNew'){e.preventDefault();ACT.stuckadd()}});
 document.addEventListener('input',e=>{const t=e.target,b=t.dataset&&t.dataset.bind;
   if(t.id==='filter'){ui.filter=t.value;renderLeft();return}
   if(t.id==='libf'){const q=t.value.toLowerCase();document.querySelectorAll('#libgrid .icard').forEach(e=>e.style.display=e.dataset.hay.includes(q)?'':'none');return}
