@@ -503,6 +503,7 @@ function seedSel(a){return `<select class="seedsel ${a.seed&&seedById(a.seed)?'h
 function metaHTML(a){const sd=a.seed?seedById(a.seed):null;return `<div class="meta"><span>from:</span>${seedSel(a)}${sd?`<a class="from" data-act="open" data-k="seeds" data-id="${sd.id}" title="Open this seed">open ↗</a>`:''}${evSel(a)}<button class="sm ghost xp" data-act="togans" data-aid="${a.id}" style="display:none">Expand ▾</button><button class="sm ghost" data-act="delans" data-aid="${a.id}">remove</button></div>`}
 function answerHTML(a){return `<div class="answ" data-aid="${a.id}"><textarea data-bind="ans" data-aid="${a.id}">${esc(a.text)}</textarea>${metaHTML(a)}</div>`}
 function newBoxHTML(){return `<div class="answ new"><textarea data-bind="newans" placeholder="Write here…"></textarea></div>`}
+function moreBtnHTML(){return `<button type="button" class="sm ghost morebtn" data-act="moreans" style="margin-top:6px">＋ Add another answer</button>`}
 
 function cardView(c){
   const def=CARD_TYPES[c.type];
@@ -512,7 +513,7 @@ function cardView(c){
   const body=groups.map((g,gi)=>`<div class="grp">${esc(g.h)}</div><div class="qgrid">`+g.qs.map((q,qi)=>{
     const id=(gi<def.groups.length?c.type:'common')+'.'+gi+'.'+qi;
     const as=c.answers.filter(a=>a.q===id&&a.text&&a.text.trim());
-    return `<div class="q qcard ${as.length?'done':''}" data-cid="${c.id}" data-qid="${id}"><label>${esc(q)}</label>${as.map(answerHTML).join('')}${newBoxHTML()}</div>`}).join('')+`</div>`).join('');
+    return `<div class="q qcard ${as.length?'done':''}" data-cid="${c.id}" data-qid="${id}"><label>${esc(q)}</label>${as.map(answerHTML).join('')}${as.length?moreBtnHTML():newBoxHTML()}</div>`}).join('')+`</div>`).join('');
   const sds=seedsOfCard(c);
   return `<div class="wrap" style="max-width:1200px"><div class="head"><span class="badge">${def.icon} ${def.label}</span><input class="title" data-bind="cardname" value="${esc(c.name)}" placeholder="Name"><button class="ghost" data-act="delcard" data-id="${c.id}">Delete</button></div>
   <div class="row" style="margin-bottom:10px"><input data-bind="cardalias" value="${esc((c.aliases||[]).join(', '))}" placeholder="Other names (comma separated), so it is found when you type them"></div>
@@ -685,6 +686,7 @@ const ACT={
    const linked=attach(s,c);if(linked&&!isNew)evt('card_reused',c.id,c.name);ui.excerpt='';ui.newCard=false;save();ui.tab='seeds';ui.sel={k:'seeds',id:s.id};ui.from=s.id;render()},
  stuckadd(){const i=$('#stuckNew'),v=i?i.value.trim():'';if(!v){toast('Type a point first');return}db.prefs.stuck=[...(db.prefs.stuck||[]),v];ui.stuckOpen=true;save();const k=$('#stuckBox');if(k)k.innerHTML=stuckHTML(pieceById(ui.sel.id));const n=$('#stuckNew');if(n)n.focus();toast('Saved to When stuck')},
  stuckdel(el){const m=(db.prefs.stuck||[]).slice();m.splice(+el.dataset.i,1);db.prefs.stuck=m;ui.stuckOpen=true;save();const k=$('#stuckBox');if(k)k.innerHTML=stuckHTML(pieceById(ui.sel.id))},
+ moreans(el){el.insertAdjacentHTML('beforebegin',newBoxHTML());const t=el.previousElementSibling.querySelector('textarea');el.remove();if(t)t.focus()},
  backpiece(){const id=ui.pieceBack;ui.pieceBack=null;ui.tab='pieces';ui.sel={k:'pieces',id};render()},
  hook(el){const sd=seedById(ui.sel.id);sd.hooks=sd.hooks||[];const k=el.dataset.k;sd.hooks=sd.hooks.includes(k)?sd.hooks.filter(x=>x!==k):[...sd.hooks,k];sd.updated=Date.now();save();render()},
  newcardform(el){ui.newCard=true;ui.newType=(el&&el.dataset&&el.dataset.t)||'';render();if(ui.newType){const t=$('#dType');if(t){t.value=ui.newType;hint()}}const n=$('#dName');if(n)n.focus()},
@@ -748,7 +750,7 @@ document.addEventListener('input',e=>{const t=e.target,b=t.dataset&&t.dataset.bi
     const c=cardById(q.dataset.cid);const seed=ui.from&&seedById(ui.from)?ui.from:null;
     const a={id:uid(),q:q.dataset.qid,text:t.value,seed,ev:''};c.answers.push(a);evt('answer',c.id,c.name);trackAdd('card',c.id,c.name,'',words(t.value));if(seed)attach(seedById(seed),c);
     t.dataset.bind='ans';t.dataset.aid=a.id;w.classList.remove('new');w.dataset.aid=a.id;t.removeAttribute('placeholder');
-    w.insertAdjacentHTML('beforeend',metaHTML(a));w.insertAdjacentHTML('afterend',newBoxHTML());q.classList.add('done');autosize(t);save()}
+    w.insertAdjacentHTML('beforeend',metaHTML(a));w.insertAdjacentHTML('afterend',moreBtnHTML());q.classList.add('done');autosize(t);save()}
 });
 document.addEventListener('change',e=>{const t=e.target,b=t.dataset&&t.dataset.bind;if(t.id==='dType'){hint();return}if(!b)return;
   if(b==='from'){ui.from=t.value||null;render()}
