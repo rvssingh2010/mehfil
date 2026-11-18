@@ -486,7 +486,8 @@ function seedView(s){
     <div class="chips">${HOOKS.map(([k,l])=>`<button type="button" class="chip ${hk.includes(k)?'on':''}" data-act="hook" data-k="${k}">${hk.includes(k)?'✓ ':''}${CARD_TYPES[k].icon} ${l}</button>`).join('')}</div>
     <textarea data-bind="seedwhy" placeholder="Write here: what made you curious, and why?" style="min-height:280px;margin-top:10px;font-family:var(--ff);font-size:17px;line-height:1.7;padding:16px 18px">${esc(s.why||'')}</textarea>
     ${hk.length?`<div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="hint">Make a card for:</span>${hk.map(k=>`<button type="button" class="ghost" data-act="newcardform" data-t="${k}">＋ ${CARD_TYPES[k].icon} ${CARD_TYPES[k].label}</button>`).join('')}</div>`:''}</div>`;
-  return `<div class="wrap"><div class="head" style="justify-content:flex-end"><button class="ghost" data-act="delseed" data-id="${s.id}">Delete seed</button></div>
+  const back=ui.pieceBack&&pieceById(ui.pieceBack)?`<div class="from-bar"><button class="pri" data-act="backpiece">← Back to “${esc(pieceById(ui.pieceBack).title||'piece')}”</button></div>`:'';
+  return `<div class="wrap">${back}<div class="head" style="justify-content:flex-end"><button class="ghost" data-act="delseed" data-id="${s.id}">Delete seed</button></div>
   <textarea id="seedtext" data-bind="seedtext" placeholder="Write your seed here…" style="min-height:130px;font-family:var(--ff);font-size:17px;line-height:1.7;padding:16px 18px">${esc(s.text||'')}</textarea>
   ${master}
   <div class="cardsHead"><h3>Cards for this seed</h3></div>
@@ -587,7 +588,8 @@ function pieceView(p){
      <div class="prow"><select id="pS"><option value="">Add a seed…</option>${sOpts}</select><button data-act="pulls" data-id="${p.id}">Add</button></div>
      <div class="prow" style="margin-top:6px"><select id="pC"><option value="">Add a card…</option>${cOpts}</select><button data-act="pullc" data-id="${p.id}">Add</button></div>
      <div class="prow" style="margin-top:6px"><select id="pNT"><option value="">New card type…</option>${NEW_TYPES.map(k=>`<option value="${k}">${CARD_TYPES[k].icon} ${CARD_TYPES[k].label}</option>`).join('')}</select><input id="pNN" placeholder="Name it" style="flex:1 1 0;min-width:0"><button data-act="pnewc" data-id="${p.id}">＋ New</button></div>
-     <div class="chips">${seeds.map(s=>`<span class="chip" data-act="unpull" data-w="seeds" data-pid="${p.id}" data-id="${s.id}" title="Click to remove">${esc(seedLabel(s))} ✕</span>`).join('')}${cards.map(c=>`<span class="chip" data-act="unpull" data-w="cards" data-pid="${p.id}" data-id="${c.id}" title="Click to remove">${CARD_TYPES[c.type].icon} ${esc(c.name)} ✕</span>`).join('')}</div>
+     ${seeds.length||cards.length?`<div class="hint" style="margin-top:8px">In this piece. Click a name to open it; ✕ removes it from the piece.</div>`:''}
+     <div class="chips">${seeds.map(s=>`<span class="chip">🌱 <a class="from" data-act="pieceopen" data-k="seeds" data-pid="${p.id}" data-id="${s.id}" title="Open this seed">${esc(seedLabel(s))}</a><b data-act="unpull" data-w="seeds" data-pid="${p.id}" data-id="${s.id}" title="Remove from this piece" style="cursor:pointer;margin-left:4px">✕</b></span>`).join('')}${cards.map(c=>`<span class="chip">${CARD_TYPES[c.type].icon} <a class="from" data-act="pieceopen" data-k="cards" data-pid="${p.id}" data-id="${c.id}" title="Open this card and its questions">${esc(c.name)}</a><b data-act="unpull" data-w="cards" data-pid="${p.id}" data-id="${c.id}" title="Remove from this piece" style="cursor:pointer;margin-left:4px">✕</b></span>`).join('')}</div>
      <div class="matscroll">${sheet}</div>
      <div class="row" style="margin-top:8px"><button class="sm" data-act="sheetmd" data-id="${p.id}">Download material as text</button></div></div>
   </div></div></div>`;
@@ -687,6 +689,7 @@ const ACT={
  stuckadd(){const i=$('#stuckNew'),v=i?i.value.trim():'';if(!v){toast('Type a point first');return}db.prefs.stuck=[...(db.prefs.stuck||[]),v];ui.stuckOpen=true;save();const k=$('#stuckBox');if(k)k.innerHTML=stuckHTML(pieceById(ui.sel.id));const n=$('#stuckNew');if(n)n.focus();toast('Saved to When stuck')},
  stuckdel(el){const m=(db.prefs.stuck||[]).slice();m.splice(+el.dataset.i,1);db.prefs.stuck=m;ui.stuckOpen=true;save();const k=$('#stuckBox');if(k)k.innerHTML=stuckHTML(pieceById(ui.sel.id))},
  moreans(el){el.insertAdjacentHTML('beforebegin',newBoxHTML());const t=el.previousElementSibling.querySelector('textarea');el.remove();if(t)t.focus()},
+ pieceopen(el){const k=el.dataset.k;ui.pFocus=false;ui.pieceBack=el.dataset.pid;ui.tab=k;ui.sel={k,id:el.dataset.id};ui.from=k==='seeds'?el.dataset.id:null;ui.adding=null;ui.excerpt='';ui.newCard=false;render();window.scrollTo(0,0);const m=$('#main');if(m)m.scrollTop=0},
  backpiece(){const id=ui.pieceBack;ui.pieceBack=null;ui.tab='pieces';ui.sel={k:'pieces',id};render()},
  hook(el){const sd=seedById(ui.sel.id);sd.hooks=sd.hooks||[];const k=el.dataset.k;sd.hooks=sd.hooks.includes(k)?sd.hooks.filter(x=>x!==k):[...sd.hooks,k];sd.updated=Date.now();save();render()},
  newcardform(el){ui.newCard=true;ui.newType=(el&&el.dataset&&el.dataset.t)||'';render();if(ui.newType){const t=$('#dType');if(t){t.value=ui.newType;hint()}}const n=$('#dName');if(n)n.focus()},
