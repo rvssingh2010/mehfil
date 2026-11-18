@@ -484,10 +484,10 @@ function seedView(s){
   const master=`<div class="sec master"><h3 style="margin:0 0 4px">What made you curious about this seed, and why?</h3>
     <div class="hint" style="margin-bottom:8px">Pick what pulled you in. More than one is fine.</div>
     <div class="chips">${HOOKS.map(([k,l])=>`<button type="button" class="chip ${hk.includes(k)?'on':''}" data-act="hook" data-k="${k}">${hk.includes(k)?'✓ ':''}${CARD_TYPES[k].icon} ${l}</button>`).join('')}</div>
-    <textarea data-bind="seedwhy" placeholder="Why? In a line or two…" style="min-height:70px;margin-top:10px">${esc(s.why||'')}</textarea>
+    <textarea data-bind="seedwhy" placeholder="Write here: what made you curious, and why?" style="min-height:280px;margin-top:10px;font-family:var(--ff);font-size:17px;line-height:1.7;padding:16px 18px">${esc(s.why||'')}</textarea>
     ${hk.length?`<div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="hint">Make a card for:</span>${hk.map(k=>`<button type="button" class="ghost" data-act="newcardform" data-t="${k}">＋ ${CARD_TYPES[k].icon} ${CARD_TYPES[k].label}</button>`).join('')}</div>`:''}</div>`;
   return `<div class="wrap"><div class="head" style="justify-content:flex-end"><button class="ghost" data-act="delseed" data-id="${s.id}">Delete seed</button></div>
-  <textarea id="seedtext" data-bind="seedtext" placeholder="Write your seed here…" style="min-height:200px;font-family:var(--ff);font-size:17px;line-height:1.7;padding:16px 18px">${esc(s.text||'')}</textarea>
+  <textarea id="seedtext" data-bind="seedtext" placeholder="Write your seed here…" style="min-height:130px;font-family:var(--ff);font-size:17px;line-height:1.7;padding:16px 18px">${esc(s.text||'')}</textarea>
   ${master}
   <div class="cardsHead"><h3>Cards for this seed</h3></div>
   ${form}
